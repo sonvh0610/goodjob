@@ -1,0 +1,3 @@
+interface:
+  display_name: "Redis Realtime Media Workers"
+  short_description: "Help with Redis Realtime Media Workers tasks"

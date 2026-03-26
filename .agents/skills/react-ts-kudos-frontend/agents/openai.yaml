@@ -1,0 +1,4 @@
+interface:
+  display_name: "React Kudos Frontend"
+  short_description: "Build kudos and feed UI with React + TS"
+  default_prompt: "Implement or refine the React + TypeScript frontend for kudos creation, live feed, reactions/comments, and reward redemption UX with strong loading/error states and tests."

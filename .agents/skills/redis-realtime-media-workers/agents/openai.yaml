@@ -1,0 +1,4 @@
+interface:
+  display_name: "Redis Realtime Workers"
+  short_description: "Pub/sub notifications and async media jobs"
+  default_prompt: "Implement Redis pub-sub and queue workers for realtime kudos updates, tagged-user notifications, and non-blocking video processing with retries and observability."

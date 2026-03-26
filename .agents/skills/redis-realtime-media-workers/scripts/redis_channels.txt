@@ -1,0 +1,4 @@
+goodjob.feed
+goodjob.notifications.user.{userId}
+goodjob.media.jobs
+goodjob.media.completed

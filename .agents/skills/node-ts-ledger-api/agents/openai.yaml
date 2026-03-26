@@ -1,0 +1,4 @@
+interface:
+  display_name: "Node Ledger API"
+  short_description: "Transactional points API with race safety"
+  default_prompt: "Implement Node.js + TypeScript APIs for kudos and rewards with immutable point ledger, monthly budget enforcement, idempotency, and concurrency-safe redemption."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Docker CI Gates"
+  short_description: "Compose and CI quality gates for fullstack TS"
+  default_prompt: "Set up docker-compose and CI quality gates (lint, typecheck, test, build, migration/smoke checks) for a React + Node + Redis + Postgres stack."
