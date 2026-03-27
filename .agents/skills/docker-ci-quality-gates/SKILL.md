@@ -23,10 +23,10 @@ Create consistent local and CI workflows that prevent regressions and prove deli
 - optional `worker`
 
 ## CI Gate Baseline
-- `npm run lint`
-- `npm run typecheck`
-- `npm run test`
-- `npm run build`
+- `npm exec nx run-many -t lint`
+- `npm exec nx run-many -t typecheck`
+- `npm exec nx run-many -t test`
+- `npm exec nx run-many -t build`
 
 ## Release Readiness Checklist
 - `.env.example` exists and documented.

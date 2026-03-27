@@ -8,6 +8,12 @@ description: Implement Node.js plus TypeScript backend APIs with transaction saf
 ## Overview
 Build reliable API flows where points and balances never drift, even under concurrent requests.
 
+## Stack Assumptions (Current Plan)
+- Runtime/API: Fastify + TypeScript.
+- Persistence: Drizzle ORM + PostgreSQL.
+- Auth: Better Auth (self-hosted), cookie sessions, email/password + Google/Slack OAuth.
+- Async/realtime: Redis + BullMQ + WebSocket.
+
 ## Workflow
 1. Model wallet, budget ledger, and immutable point ledger first.
 2. Implement write paths inside explicit DB transactions.
@@ -23,6 +29,10 @@ Build reliable API flows where points and balances never drift, even under concu
 - Persist all point changes to immutable ledger entries.
 
 ## API Design Guidance
+- Prefer Better Auth route surface:
+  - `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`
+  - `POST /auth/forgot-password`, `POST /auth/reset-password`
+  - `GET /auth/oauth/:provider/start`, `GET /auth/oauth/:provider/callback`
 - Use idempotency keys for redeem endpoint.
 - Use cursor pagination for feed endpoints.
 - Keep validation at boundary (schema validation).

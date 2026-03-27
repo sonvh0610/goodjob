@@ -5,7 +5,7 @@ import { wallets } from '../db/schema.js';
 
 export default async function (fastify: FastifyInstance) {
   fastify.get('/', async function () {
-    return { message: 'Amanotes API is running' };
+    return { message: 'Goodjob API is running' };
   });
 
   fastify.get('/healthz', async function () {

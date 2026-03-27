@@ -1,4 +1,4 @@
-# Amanotes Kudos MVP (Nx Monorepo)
+# Goodjob Kudos MVP (Nx Monorepo)
 
 This repository implements the case study in [`docs/CASE_STUDY_1_PLAN.md`](./docs/CASE_STUDY_1_PLAN.md) with:
 
@@ -44,6 +44,8 @@ npm install
 ```bash
 docker compose up -d
 ```
+
+PostgreSQL is exposed on host port `54322` (mapped to container `5432`) to avoid conflicts with local Postgres installs.
 
 3. Copy env:
 

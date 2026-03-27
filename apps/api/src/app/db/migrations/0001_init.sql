@@ -169,5 +169,5 @@ insert into rewards(name, cost_points, stock, active)
 values
   ('Amazon Gift Card $25', 250, 100, true),
   ('Spotify Premium 1 month', 180, 150, true),
-  ('Amanotes Swag Pack', 120, 200, true)
+  ('Goodjob Swag Pack', 120, 200, true)
 on conflict do nothing;

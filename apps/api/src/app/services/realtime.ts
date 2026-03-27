@@ -2,7 +2,7 @@ import type { WebSocket } from 'ws';
 import type { RealtimeEnvelope } from '@org/shared';
 import { redis, redisSubscriber } from '../lib/redis.js';
 
-const CHANNEL = 'amanotes:events';
+const CHANNEL = 'goodjob:events';
 const userSockets = new Map<string, Set<WebSocket>>();
 let subscriberStarted = false;
 

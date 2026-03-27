@@ -48,3 +48,12 @@ Thumbs.db
 .nx/polygraph
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# secrets and local credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx

@@ -1,4 +1,4 @@
-# Amanotes Case Study 1 Plan (Good Job MVP)
+# Goodjob Case Study 1 Plan (Good Job MVP)
 
 ## 1) Goal and target score
 Build a production-ready MVP in 3 days that safely supports kudos, live feed, and reward redemption.

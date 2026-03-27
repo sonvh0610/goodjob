@@ -16,10 +16,11 @@ Implement real-time updates and asynchronous media processing without blocking A
 5. Track retries, dead-letter cases, and job status.
 
 ## Event Design
-- `kudo.created`
-- `kudo.commented`
-- `kudo.reacted`
-- `user.tagged`
+- `feed.new`
+- `feed.comment`
+- `feed.reaction`
+- `notification.new`
+- `wallet.points_received`
 - `reward.redeemed`
 
 ## Queue Design

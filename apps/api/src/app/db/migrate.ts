@@ -13,10 +13,7 @@ async function ensureMigrationsTable() {
 }
 
 async function run() {
-  const migrationsDir = path.resolve(
-    process.cwd(),
-    'apps/api/src/app/db/migrations'
-  );
+  const migrationsDir = path.resolve(__dirname, 'migrations');
   const files = (await fs.readdir(migrationsDir))
     .filter((name) => name.endsWith('.sql'))
     .sort();
