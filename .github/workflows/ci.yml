@@ -10,21 +10,21 @@ permissions:
   actions: read
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   main:
     runs-on: ubuntu-latest
+    env:
+      NX_DAEMON: 'false'
     steps:
       - uses: actions/checkout@v4
         with:
           filter: tree:0
           fetch-depth: 0
 
-      # This enables task distribution via Nx Cloud
-      # Run this command as early as possible, before dependencies are installed
-      # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="e2e-ci"
-
-      # Cache node_modules
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -32,9 +32,20 @@ jobs:
 
       - run: npm ci
 
-      # Prepend any command with "nx record --" to record its logs to Nx Cloud
-      - run: npx nx record -- npx nx format:check  --base="remotes/origin/main"
-      - run: npx nx run-many -t lint test build typecheck e2e-ci
-      # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
-      - run: npx nx fix-ci
-        if: always()
+      - name: Set Nx SHAs
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            NX_BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            NX_BASE_SHA="${{ github.event.before }}"
+          fi
+
+          if [ -z "$NX_BASE_SHA" ] || [ "$NX_BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            NX_BASE_SHA="$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)"
+          fi
+
+          echo "NX_BASE=$NX_BASE_SHA" >> "$GITHUB_ENV"
+          echo "NX_HEAD=${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - run: npm exec nx format:check -- --base="$NX_BASE" --head="$NX_HEAD"
+      - run: npm exec nx affected -- --targets=typecheck,test,build --base="$NX_BASE" --head="$NX_HEAD" --parallel=3
