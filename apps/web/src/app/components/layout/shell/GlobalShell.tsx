@@ -24,12 +24,7 @@ export function GlobalShell() {
   }, [location.pathname, location.search]);
 
   const activeKey = useMemo(() => {
-    if (
-      location.pathname === '/' &&
-      new URLSearchParams(location.search).get('role') === 'admin'
-    ) {
-      return 'admin';
-    }
+    if (location.pathname === '/admin') return 'admin';
     if (location.pathname === '/') return 'dashboard';
     if (location.pathname === '/feed') return 'feed';
     if (location.pathname === '/send-kudos') return 'send';
@@ -37,7 +32,7 @@ export function GlobalShell() {
     if (location.pathname === '/wallet') return 'wallet';
     if (location.pathname === '/notifications') return 'notifications';
     return null;
-  }, [location.pathname, location.search]);
+  }, [location.pathname]);
 
   const desktopMainPadding = collapsed ? 'lg:pl-20' : 'lg:pl-64';
 

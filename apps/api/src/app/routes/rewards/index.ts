@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { and, eq, sql } from 'drizzle-orm';
-import { redeemRewardBodySchema } from '@org/shared';
+import { createRewardBodySchema, redeemRewardBodySchema } from '@org/shared';
 import { db } from '../../db/client.js';
 import {
   notifications,
@@ -11,6 +11,25 @@ import {
 } from '../../db/schema.js';
 
 export default async function rewardRoutes(fastify: FastifyInstance) {
+  fastify.post('/', { preHandler: fastify.requireAuth }, async (request, reply) => {
+    if (request.user?.role !== 'admin') {
+      return reply.status(403).send({ error: 'Admin access required' });
+    }
+
+    const parsed = createRewardBodySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.flatten() });
+    }
+
+    const created = await db.insert(rewards).values(parsed.data).returning();
+    const reward = created[0];
+    if (!reward) {
+      return reply.status(500).send({ error: 'Cannot create reward' });
+    }
+
+    return reply.status(201).send({ reward });
+  });
+
   fastify.get(
     '/',
     { preHandler: fastify.requireAuth },

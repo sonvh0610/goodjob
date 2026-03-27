@@ -12,7 +12,7 @@ Implement high-quality frontend flows for kudos creation, feed browsing, and eng
 ## Stack Assumptions (Current Plan)
 - App stack: React + Vite + TypeScript.
 - Data layer: React Query for server state and cache updates.
-- Auth UX: Better Auth flows (register/login/forgot/reset + Google/Slack OAuth entry points).
+- Auth UX: Better Auth flows (login/forgot/reset + OAuth entry points, with optional auto-provisioned accounts).
 - Live updates: WebSocket client for feed, notifications, and wallet events.
 
 ## Workflow
@@ -30,12 +30,13 @@ Implement high-quality frontend flows for kudos creation, feed browsing, and eng
 - Keep forms schema-driven with shared validation rules.
 - Keep mutation side effects in hooks, not in view components.
 - Use accessible controls for reactions, comments, and uploads.
+- Ensure clickable buttons visibly use pointer cursor (`cursor: pointer`) and disabled buttons use a blocked cursor.
 - Prevent duplicate submits with disabled-state and request guards.
 
 ## Required UI Flows
 
 1. Give Kudo form: receiver, points, description, core value tag, media upload.
-2. Auth pages: register, login, forgot-password, reset-password, OAuth starts.
+2. Auth pages: login, forgot-password, reset-password, OAuth starts (register page optional if OAuth auto-creates users).
 3. Feed: cursor-paginated list with reactions and comments, patched by live socket events.
 4. Notifications inbox with persisted API reads plus realtime inserts.
 5. Reward catalog and redeem action with idempotency-aware UX.

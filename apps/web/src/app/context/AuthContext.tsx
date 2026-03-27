@@ -12,6 +12,8 @@ interface AuthUser {
   id: string;
   email: string;
   displayName: string;
+  avatarUrl: string | null;
+  role: 'member' | 'admin';
 }
 
 interface AuthContextValue {
@@ -29,7 +31,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const refresh = async () => {
     try {
-      const result = await apiRequest<{ user: AuthUser }>('/auth/me');
+      const result = await apiRequest<{ user: AuthUser }>('/auth/me', {
+        cache: 'no-store',
+      });
       setUser(result.user);
     } catch {
       setUser(null);
@@ -39,8 +43,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const logout = async () => {
-    await apiRequest('/auth/logout', { method: 'POST' });
-    setUser(null);
+    try {
+      await apiRequest('/auth/logout', { method: 'POST' });
+    } catch {
+      // Logout should still clear local auth state if server session is already invalid.
+    } finally {
+      setUser(null);
+    }
   };
 
   useEffect(() => {

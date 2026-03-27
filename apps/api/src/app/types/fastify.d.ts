@@ -13,6 +13,8 @@ declare module 'fastify' {
       id: string;
       email: string;
       displayName: string;
+      avatarUrl: string | null;
+      role: 'member' | 'admin';
     };
   }
 }

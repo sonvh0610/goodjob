@@ -2,26 +2,6 @@ import { z } from 'zod';
 
 export const uuidSchema = z.string().uuid();
 
-export const registerBodySchema = z.object({
-  email: z.string().email(),
-  displayName: z.string().min(2).max(100),
-  password: z.string().min(8).max(128),
-});
-
-export const loginBodySchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
-});
-
-export const forgotPasswordBodySchema = z.object({
-  email: z.string().email(),
-});
-
-export const resetPasswordBodySchema = z.object({
-  token: z.string().min(32),
-  password: z.string().min(8).max(128),
-});
-
 export const uploadPresignBodySchema = z.object({
   fileName: z.string().min(1).max(255),
   mimeType: z.string().min(1),
@@ -51,6 +31,13 @@ export const redeemRewardBodySchema = z.object({
   quantity: z.number().int().min(1).max(1).default(1),
 });
 
+export const createRewardBodySchema = z.object({
+  name: z.string().min(2).max(140),
+  costPoints: z.number().int().positive().max(100000),
+  stock: z.number().int().min(0).max(100000).default(0),
+  active: z.boolean().default(true),
+});
+
 export const feedCursorSchema = z.object({
   createdAt: z.string().datetime(),
   id: uuidSchema,
@@ -61,15 +48,12 @@ export const listFeedQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
-export type RegisterBody = z.infer<typeof registerBodySchema>;
-export type LoginBody = z.infer<typeof loginBodySchema>;
-export type ForgotPasswordBody = z.infer<typeof forgotPasswordBodySchema>;
-export type ResetPasswordBody = z.infer<typeof resetPasswordBodySchema>;
 export type UploadPresignBody = z.infer<typeof uploadPresignBodySchema>;
 export type CreateKudoBody = z.infer<typeof createKudoBodySchema>;
 export type CreateReactionBody = z.infer<typeof createReactionBodySchema>;
 export type CreateCommentBody = z.infer<typeof createCommentBodySchema>;
 export type RedeemRewardBody = z.infer<typeof redeemRewardBodySchema>;
+export type CreateRewardBody = z.infer<typeof createRewardBodySchema>;
 
 export type RealtimeEventType =
   | 'feed.new'

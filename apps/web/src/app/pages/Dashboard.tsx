@@ -1,13 +1,20 @@
 import { AppIcon } from '../components/ui/AppIcon';
+import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const firstName =
+    user?.displayName.trim().split(/\s+/)[0] && user.displayName.trim().length > 0
+      ? user.displayName.trim().split(/\s+/)[0]
+      : 'there';
+
   return (
     <div className="min-h-[calc(100vh-5rem)] px-4 py-6 sm:px-6 lg:px-8 md:py-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-2">
-              Hello, Alex! 👋
+              Hello, {firstName}! 👋
             </h1>
             <p className="text-on-surface-variant text-lg">
               You're doing an amazing job this month. Keep it up!

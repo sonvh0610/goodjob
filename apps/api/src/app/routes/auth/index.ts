@@ -1,33 +1,31 @@
 import { FastifyInstance } from 'fastify';
 import {
-  forgotPasswordBodySchema,
-  loginBodySchema,
-  registerBodySchema,
-  resetPasswordBodySchema,
-} from '@org/shared';
-import { eq } from 'drizzle-orm';
-import {
-  authenticateUser,
-  createPasswordResetToken,
   createSession,
   destroySession,
-  registerUser,
-  resetPassword,
   upsertOauthAccount,
 } from '../../services/auth.js';
-import { db } from '../../db/client.js';
-import { users } from '../../db/schema.js';
 import { redis } from '../../lib/redis.js';
 import { makeToken } from '../../lib/crypto.js';
 
 const OAUTH_STATE_KEY_PREFIX = 'oauth:state:';
 
-function makeCookieOptions(maxAgeSeconds: number) {
+function makeCookieOptions(
+  env: FastifyInstance['appEnv'],
+  maxAgeSeconds: number
+) {
+  const apiUrl = new URL(env.API_BASE_URL);
+  const appOrigin = new URL(env.APP_BASE_URL).origin;
+  const apiOrigin = apiUrl.origin;
+  const crossOrigin = appOrigin !== apiOrigin;
+  const secure = crossOrigin || apiUrl.protocol === 'https:';
+
   return {
     path: '/',
     httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: false,
+    // Cross-origin auth (e.g. localhost web + https API tunnel) requires
+    // SameSite=None and Secure so browsers include session cookie on XHR/fetch.
+    sameSite: (crossOrigin ? 'none' : 'lax') as 'none' | 'lax',
+    secure,
     maxAge: maxAgeSeconds,
   };
 }
@@ -65,12 +63,14 @@ async function resolveOauthUser(
             id: string;
             email?: string;
             name?: string;
+            picture?: string;
           };
           return upsertOauthAccount({
             provider,
             providerAccountId: userData.id,
             email: userData.email,
             displayName: userData.name,
+            avatarUrl: userData.picture,
           });
         }
       }
@@ -91,17 +91,26 @@ async function resolveOauthUser(
     if (tokenResp.ok) {
       const tokenData = (await tokenResp.json()) as {
         ok?: boolean;
-        authed_user?: { id?: string };
+        authed_user?: { id?: string; access_token?: string };
         access_token?: string;
       };
-      if (tokenData.ok && tokenData.access_token) {
+      const slackUserAccessToken =
+        tokenData.authed_user?.access_token ?? tokenData.access_token;
+
+      if (tokenData.ok && slackUserAccessToken) {
         const profileResp = await fetch('https://slack.com/api/users.identity', {
-          headers: { authorization: `Bearer ${tokenData.access_token}` },
+          headers: { authorization: `Bearer ${slackUserAccessToken}` },
         });
         if (profileResp.ok) {
           const profileData = (await profileResp.json()) as {
             ok?: boolean;
-            user?: { id?: string; email?: string; name?: string };
+            user?: {
+              id?: string;
+              email?: string;
+              name?: string;
+              image_192?: string;
+              image_512?: string;
+            };
           };
           if (profileData.ok && profileData.user?.id) {
             return upsertOauthAccount({
@@ -109,6 +118,8 @@ async function resolveOauthUser(
               providerAccountId: profileData.user.id,
               email: profileData.user.email,
               displayName: profileData.user.name,
+              avatarUrl:
+                profileData.user.image_512 ?? profileData.user.image_192,
             });
           }
         }
@@ -125,95 +136,20 @@ async function resolveOauthUser(
 }
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  fastify.post('/register', async (request, reply) => {
-    const parsed = registerBodySchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.flatten() });
-    }
-
-    const existing = await db.query.users.findFirst({
-      where: eq(users.email, parsed.data.email.toLowerCase()),
-    });
-    if (existing) {
-      return reply.status(409).send({ error: 'Email already exists' });
-    }
-
-    const user = await registerUser(parsed.data);
-    const session = await createSession(user.id);
-    reply.setCookie(
-      fastify.appEnv.SESSION_COOKIE_NAME,
-      session.sessionToken,
-      makeCookieOptions(Math.floor((session.expiresAt.getTime() - Date.now()) / 1000))
-    );
-    return reply.send({ user: { id: user.id, email: user.email, displayName: user.displayName } });
-  });
-
-  fastify.post('/login', async (request, reply) => {
-    const parsed = loginBodySchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.flatten() });
-    }
-
-    const user = await authenticateUser(parsed.data);
-    if (!user) {
-      return reply.status(401).send({ error: 'Invalid credentials' });
-    }
-
-    const session = await createSession(user.id);
-    reply.setCookie(
-      fastify.appEnv.SESSION_COOKIE_NAME,
-      session.sessionToken,
-      makeCookieOptions(Math.floor((session.expiresAt.getTime() - Date.now()) / 1000))
-    );
-    return reply.send({
-      user: {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
-      },
-    });
-  });
-
-  fastify.post('/logout', { preHandler: fastify.requireAuth }, async (request, reply) => {
+  fastify.post('/logout', async (request, reply) => {
     const token = request.cookies[fastify.appEnv.SESSION_COOKIE_NAME];
     if (token) {
-      await destroySession(token);
+      await destroySession(token).catch(() => undefined);
     }
     reply.clearCookie(fastify.appEnv.SESSION_COOKIE_NAME, { path: '/' });
     return reply.send({ ok: true });
   });
 
-  fastify.get('/me', { preHandler: fastify.requireAuth }, async (request) => {
+  fastify.get('/me', { preHandler: fastify.requireAuth }, async (request, reply) => {
+    reply.header('Cache-Control', 'no-store');
+    reply.header('Pragma', 'no-cache');
+    reply.header('Expires', '0');
     return { user: request.user };
-  });
-
-  fastify.post('/forgot-password', async (request, reply) => {
-    const parsed = forgotPasswordBodySchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.flatten() });
-    }
-
-    const reset = await createPasswordResetToken(parsed.data.email);
-    if (!reset) {
-      return reply.send({ ok: true });
-    }
-
-    return reply.send({
-      ok: true,
-      resetToken: reset.resetToken,
-    });
-  });
-
-  fastify.post('/reset-password', async (request, reply) => {
-    const parsed = resetPasswordBodySchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.flatten() });
-    }
-    const done = await resetPassword(parsed.data.token, parsed.data.password);
-    if (!done) {
-      return reply.status(400).send({ error: 'Invalid or expired token' });
-    }
-    return reply.send({ ok: true });
   });
 
   fastify.get('/oauth/:provider/start', async (request, reply) => {
@@ -244,7 +180,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
     const url = new URL('https://slack.com/oauth/v2/authorize');
     url.searchParams.set('client_id', fastify.appEnv.SLACK_OAUTH_CLIENT_ID);
     url.searchParams.set('redirect_uri', fastify.appEnv.SLACK_OAUTH_REDIRECT_URI);
-    url.searchParams.set('scope', 'identity.basic,identity.email');
+    url.searchParams.set('user_scope', 'identity.basic,identity.email');
     url.searchParams.set('state', state);
     return reply.send({ url: url.toString() });
   });
@@ -267,7 +203,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
     reply.setCookie(
       fastify.appEnv.SESSION_COOKIE_NAME,
       session.sessionToken,
-      makeCookieOptions(Math.floor((session.expiresAt.getTime() - Date.now()) / 1000))
+      makeCookieOptions(
+        fastify.appEnv,
+        Math.floor((session.expiresAt.getTime() - Date.now()) / 1000)
+      )
     );
     return reply.redirect(`${fastify.appEnv.APP_BASE_URL}/`);
   });

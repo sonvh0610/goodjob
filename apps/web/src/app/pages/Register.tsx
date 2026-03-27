@@ -1,86 +1,121 @@
-import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
-import { useAuth } from '../context/AuthContext';
+import { AppIcon } from '../components/ui/AppIcon';
 
 export function Register() {
-  const navigate = useNavigate();
-  const { refresh } = useAuth();
-
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<
+    'google' | 'facebook' | 'slack' | null
+  >(null);
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setLoading(true);
+  const startOauth = async (provider: 'google' | 'facebook' | 'slack') => {
     setError(null);
+    setLoadingProvider(provider);
     try {
-      await apiRequest('/auth/register', {
-        method: 'POST',
-        body: { displayName, email, password },
-      });
-      await refresh();
-      navigate('/', { replace: true });
+      const data = await apiRequest<{ url: string }>(
+        `/auth/oauth/${provider}/start`
+      );
+      window.location.href = data.url;
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Register failed'
+        requestError instanceof Error
+          ? requestError.message
+          : 'Cannot start oauth login'
       );
     } finally {
-      setLoading(false);
+      setLoadingProvider(null);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-slate-900">Register</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Create your account to send and receive kudos.
-        </p>
-        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2"
-            placeholder="Display name"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-          />
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2"
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2"
-            placeholder="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button
-            className="w-full rounded-md bg-blue-600 px-3 py-2 text-white disabled:opacity-60"
-            disabled={loading}
-            type="submit"
-          >
-            {loading ? 'Creating account...' : 'Create account'}
-          </button>
-        </form>
+    <div className="min-h-screen bg-surface-container-low px-4 py-10 sm:px-6">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center">
+        <section className="grid w-full gap-6 rounded-[2rem] bg-white/70 p-3 shadow-[0_20px_80px_rgba(56,42,78,0.14)] backdrop-blur-sm md:grid-cols-2">
+          <div className="relative overflow-hidden rounded-[1.4rem] bg-surface-container-lowest p-8">
+            <div className="absolute -left-8 -top-8 h-32 w-32 rounded-full bg-primary/10" />
+            <div className="absolute -bottom-14 -right-10 h-52 w-52 rounded-full bg-tertiary-container/40" />
+            <p className="relative z-10 inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
+              First Time Here
+            </p>
+            <h1 className="relative z-10 mt-5 text-4xl font-black tracking-tight text-on-surface">
+              Join GoodJob
+            </h1>
+            <p className="relative z-10 mt-3 max-w-sm text-sm text-on-surface-variant">
+              Accounts are created automatically after OAuth. Choose your provider
+              and we will take care of the rest.
+            </p>
+          </div>
 
-        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+          <div className="rounded-[1.4rem] bg-white p-6 shadow-sm sm:p-8">
+            <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+              Continue With
+            </p>
+            <div className="mt-5 space-y-3">
+              <button
+                className="flex w-full items-center justify-between rounded-2xl border border-surface-container px-4 py-3 text-sm font-semibold text-on-surface transition hover:-translate-y-0.5 hover:shadow"
+                disabled={loadingProvider !== null}
+                onClick={() => void startOauth('google')}
+                type="button"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <AppIcon className="material-symbols-outlined text-lg">
+                    public
+                  </AppIcon>
+                  Google
+                </span>
+                <AppIcon className="material-symbols-outlined text-base">
+                  arrow_forward
+                </AppIcon>
+              </button>
+              <button
+                className="flex w-full items-center justify-between rounded-2xl border border-surface-container px-4 py-3 text-sm font-semibold text-on-surface transition hover:-translate-y-0.5 hover:shadow"
+                disabled={loadingProvider !== null}
+                onClick={() => void startOauth('facebook')}
+                type="button"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <AppIcon className="material-symbols-outlined text-lg">
+                    thumb_up
+                  </AppIcon>
+                  Facebook
+                </span>
+                <AppIcon className="material-symbols-outlined text-base">
+                  arrow_forward
+                </AppIcon>
+              </button>
+              <button
+                className="flex w-full items-center justify-between rounded-2xl border border-surface-container px-4 py-3 text-sm font-semibold text-on-surface transition hover:-translate-y-0.5 hover:shadow"
+                disabled={loadingProvider !== null}
+                onClick={() => void startOauth('slack')}
+                type="button"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <AppIcon className="material-symbols-outlined text-lg">
+                    forum
+                  </AppIcon>
+                  Slack
+                </span>
+                <AppIcon className="material-symbols-outlined text-base">
+                  arrow_forward
+                </AppIcon>
+              </button>
+            </div>
+            {loadingProvider ? (
+              <p className="mt-3 text-xs text-on-surface-variant">
+                Redirecting to {loadingProvider}...
+              </p>
+            ) : null}
+            {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
 
-        <p className="mt-5 text-sm text-slate-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-700">
-            Login
-          </Link>
-        </p>
+            <p className="mt-5 text-sm text-on-surface-variant">
+              Already connected?{' '}
+              <Link className="font-bold text-primary hover:underline" to="/login">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   );

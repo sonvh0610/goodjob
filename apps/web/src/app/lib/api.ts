@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.toString() ?? 'http://localhost:3000';
+  import.meta.env.VITE_API_BASE_URL?.toString() ?? '';
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
@@ -10,14 +10,15 @@ export async function apiRequest<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const { body, headers, ...rest } = options;
+  const hasBody = body !== undefined;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: 'include',
     headers: {
-      'content-type': 'application/json',
+      ...(hasBody ? { 'content-type': 'application/json' } : {}),
       ...headers,
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: hasBody ? JSON.stringify(body) : undefined,
     ...rest,
   });
 
@@ -36,7 +37,9 @@ export async function apiRequest<T>(
 }
 
 export function wsUrl(path: string): string {
-  const url = new URL(API_BASE_URL);
+  const url = API_BASE_URL
+    ? new URL(API_BASE_URL)
+    : new URL(window.location.origin);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   url.pathname = path;
   return url.toString();

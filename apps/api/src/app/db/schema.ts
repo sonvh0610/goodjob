@@ -31,12 +31,14 @@ export const redemptionStatusEnum = pgEnum('redemption_status', [
   'approved',
   'rejected',
 ]);
+export const userRoleEnum = pgEnum('user_role', ['member', 'admin']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 320 }).notNull().unique(),
   displayName: varchar('display_name', { length: 100 }).notNull(),
-  passwordHash: varchar('password_hash', { length: 255 }),
+  avatarUrl: varchar('avatar_url', { length: 1000 }),
+  role: userRoleEnum('role').notNull().default('member'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -81,25 +83,6 @@ export const sessions = pgTable(
   },
   (table) => ({
     userIdx: index('sessions_user_idx').on(table.userId),
-  })
-);
-
-export const passwordResetTokens = pgTable(
-  'password_reset_tokens',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    tokenHash: varchar('token_hash', { length: 255 }).notNull().unique(),
-    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-    consumedAt: timestamp('consumed_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => ({
-    userIdx: index('password_reset_tokens_user_idx').on(table.userId),
   })
 );
 

@@ -1,9 +1,7 @@
-import bcrypt from 'bcryptjs';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import {
   accounts,
-  passwordResetTokens,
   sessions,
   users,
   wallets,
@@ -16,61 +14,6 @@ const env = getEnv();
 export interface SessionResult {
   sessionToken: string;
   expiresAt: Date;
-}
-
-export async function registerUser(input: {
-  email: string;
-  displayName: string;
-  password: string;
-}) {
-  const normalizedEmail = input.email.trim().toLowerCase();
-  const passwordHash = await bcrypt.hash(input.password, 10);
-
-  const result = await db
-    .insert(users)
-    .values({
-      email: normalizedEmail,
-      displayName: input.displayName.trim(),
-      passwordHash,
-    })
-    .returning({
-      id: users.id,
-      email: users.email,
-      displayName: users.displayName,
-    });
-
-  const user = result[0];
-  if (!user) {
-    throw new Error('Unable to register user');
-  }
-
-  await db.insert(wallets).values({
-    userId: user.id,
-    availablePoints: 0,
-  });
-
-  return user;
-}
-
-export async function authenticateUser(input: {
-  email: string;
-  password: string;
-}) {
-  const normalizedEmail = input.email.trim().toLowerCase();
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, normalizedEmail),
-  });
-
-  if (!user || !user.passwordHash) {
-    return null;
-  }
-
-  const valid = await bcrypt.compare(input.password, user.passwordHash);
-  if (!valid) {
-    return null;
-  }
-
-  return user;
 }
 
 export async function createSession(userId: string): Promise<SessionResult> {
@@ -97,9 +40,8 @@ export async function findSessionUser(sessionToken: string) {
       id: users.id,
       email: users.email,
       displayName: users.displayName,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      passwordHash: users.passwordHash,
+      avatarUrl: users.avatarUrl,
+      role: users.role,
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
@@ -118,65 +60,12 @@ export async function destroySession(sessionToken: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(sessionToken)));
 }
 
-export async function createPasswordResetToken(email: string) {
-  const normalizedEmail = email.trim().toLowerCase();
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, normalizedEmail),
-  });
-
-  if (!user) {
-    return null;
-  }
-
-  const resetToken = makeToken(32);
-  const tokenHash = hashToken(resetToken);
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
-
-  await db.insert(passwordResetTokens).values({
-    userId: user.id,
-    tokenHash,
-    expiresAt,
-  });
-
-  return { resetToken, user };
-}
-
-export async function resetPassword(token: string, password: string) {
-  const tokenHash = hashToken(token);
-  const resetRow = await db.query.passwordResetTokens.findFirst({
-    where: and(
-      eq(passwordResetTokens.tokenHash, tokenHash),
-      gt(passwordResetTokens.expiresAt, new Date()),
-      isNull(passwordResetTokens.consumedAt)
-    ),
-  });
-
-  if (!resetRow) {
-    return false;
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await db.transaction(async (tx) => {
-    await tx
-      .update(users)
-      .set({ passwordHash, updatedAt: new Date() })
-      .where(eq(users.id, resetRow.userId));
-
-    await tx
-      .update(passwordResetTokens)
-      .set({ consumedAt: new Date() })
-      .where(eq(passwordResetTokens.id, resetRow.id));
-  });
-
-  return true;
-}
-
 export async function upsertOauthAccount(input: {
   provider: 'google' | 'slack';
   providerAccountId: string;
   email?: string;
   displayName?: string;
+  avatarUrl?: string;
 }) {
   let user = input.email
     ? await db.query.users.findFirst({
@@ -190,6 +79,7 @@ export async function upsertOauthAccount(input: {
       .values({
         email: input.email ?? `${input.provider}-${input.providerAccountId}@local`,
         displayName: input.displayName ?? `${input.provider} user`,
+        avatarUrl: input.avatarUrl,
       })
       .returning();
     user = inserted[0] ?? null;
@@ -200,6 +90,23 @@ export async function upsertOauthAccount(input: {
       userId: user.id,
       availablePoints: 0,
     });
+  }
+
+  if (
+    user &&
+    ((input.displayName && input.displayName !== user.displayName) ||
+      (input.avatarUrl && input.avatarUrl !== user.avatarUrl))
+  ) {
+    const updated = await db
+      .update(users)
+      .set({
+        displayName: input.displayName ?? user.displayName,
+        avatarUrl: input.avatarUrl ?? user.avatarUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+    user = updated[0] ?? user;
   }
 
   const existing = await db.query.accounts.findFirst({

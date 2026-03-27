@@ -5,12 +5,14 @@ create type media_status as enum ('pending','validated','rejected');
 create type feed_event_type as enum ('kudo_created','reaction_added','comment_added');
 create type point_direction as enum ('credit','debit');
 create type redemption_status as enum ('pending','approved','rejected');
+create type user_role as enum ('member','admin');
 
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
   email varchar(320) not null unique,
   display_name varchar(100) not null,
-  password_hash varchar(255),
+  avatar_url varchar(1000),
+  role user_role not null default 'member',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -32,16 +34,6 @@ create table if not exists sessions (
   created_at timestamptz not null default now()
 );
 create index if not exists sessions_user_idx on sessions(user_id);
-
-create table if not exists password_reset_tokens (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references users(id) on delete cascade,
-  token_hash varchar(255) not null unique,
-  expires_at timestamptz not null,
-  consumed_at timestamptz,
-  created_at timestamptz not null default now()
-);
-create index if not exists password_reset_tokens_user_idx on password_reset_tokens(user_id);
 
 create table if not exists wallets (
   user_id uuid primary key references users(id) on delete cascade,

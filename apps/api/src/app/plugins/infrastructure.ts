@@ -44,6 +44,8 @@ export default fp(async function infrastructurePlugin(fastify) {
         id: user.id,
         email: user.email,
         displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
       };
     }
   );

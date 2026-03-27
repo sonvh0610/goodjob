@@ -1,9 +1,8 @@
 
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { Login } from './pages/Login';
-import { Register } from './pages/Register';
 import { GlobalShell } from './components/layout/shell/GlobalShell';
-import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { ProtectedRoute, PublicRoute } from './components/common/ProtectedRoute';
 
 import Dashboard from './pages/Dashboard';
 import AdminOverview from './pages/AdminOverview';
@@ -12,11 +11,19 @@ import Notifications from './pages/Notifications';
 import KudoFeed from './pages/KudoFeed';
 import RewardsCatalog from './pages/RewardsCatalog';
 import MyWallet from './pages/MyWallet';
+import { useAuth } from './context/AuthContext';
 
 function Home() {
-  // Mock role conditional rendering
-  const isAdmin = new URLSearchParams(window.location.search).get('role') === 'admin';
-  return isAdmin ? <AdminOverview /> : <Dashboard />;
+  const { user } = useAuth();
+  return user?.role === 'admin' ? <AdminOverview /> : <Dashboard />;
+}
+
+function AdminRoute() {
+  const { user } = useAuth();
+  if (user?.role !== 'admin') {
+    return <Navigate replace to="/" />;
+  }
+  return <AdminOverview />;
 }
 
 export function App() {
@@ -30,10 +37,13 @@ export function App() {
           <Route path="/feed" element={<KudoFeed />} />
           <Route path="/rewards" element={<RewardsCatalog />} />
           <Route path="/wallet" element={<MyWallet />} />
+          <Route path="/admin" element={<AdminRoute />} />
         </Route>
       </Route>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+      </Route>
+      <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
   );
 }

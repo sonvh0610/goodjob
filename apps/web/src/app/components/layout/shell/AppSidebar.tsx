@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import { SidebarNavLink } from '../../navigation/SidebarNavLink';
 import { AppIcon } from '../../ui/AppIcon';
 import { GoodJobLogo } from '../../ui/GoodJobLogo';
@@ -19,7 +20,17 @@ export function AppSidebar({
   onCloseMobile,
   onToggleDesktopSidebar,
 }: AppSidebarProps) {
+  const { logout, user } = useAuth();
   const desktopSidebarWidth = collapsed ? 'lg:w-20' : 'lg:w-64';
+  const navItems = user?.role === 'admin' ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.key !== 'admin');
+  const profileName = user?.displayName ?? 'Member';
+  const profileEmail = user?.email ?? '';
+  const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'M';
+
+  const onLogout = async () => {
+    await logout();
+    onCloseMobile();
+  };
 
   return (
     <>
@@ -36,7 +47,7 @@ export function AppSidebar({
           </div>
 
           <nav className="flex flex-col gap-2 overflow-y-auto pb-4">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <SidebarNavLink
                 active={activeKey === item.key}
                 collapsed={collapsed}
@@ -60,25 +71,32 @@ export function AppSidebar({
             <div
               className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3 px-2'}`}
             >
-              <img
-                alt="Alex Johnson"
-                className="h-10 w-10 shrink-0 rounded-full object-cover"
-                src="https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=crop&w=128&q=80"
-              />
+              {user?.avatarUrl ? (
+                <img
+                  alt={profileName}
+                  className="h-10 w-10 shrink-0 rounded-full object-cover"
+                  src={user.avatarUrl}
+                />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                  {profileInitial}
+                </div>
+              )}
               {collapsed ? null : (
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900">Alex Johnson</p>
-                  <p className="truncate text-xs text-slate-500">alex.johnson@goodjob.app</p>
+                  <p className="truncate text-sm font-semibold text-slate-900">{profileName}</p>
+                  <p className="truncate text-xs text-slate-500">{profileEmail}</p>
                 </div>
               )}
             </div>
-            <Link
-              className={`mt-3 flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors ${collapsed ? 'justify-center' : 'gap-2'}`}
-              to="/login"
+            <button
+              className={`mt-3 w-full flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors ${collapsed ? 'justify-center' : 'gap-2'}`}
+              onClick={() => void onLogout()}
+              type="button"
             >
               <AppIcon>log_out</AppIcon>
               {collapsed ? null : <span>Logout</span>}
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
@@ -107,7 +125,7 @@ export function AppSidebar({
                 </button>
               </div>
               <nav className="flex flex-col gap-2 overflow-y-auto pb-4">
-                {NAV_ITEMS.map((item) => (
+                {navItems.map((item) => (
                   <SidebarNavLink
                     active={activeKey === item.key}
                     iconName={item.icon}
@@ -129,24 +147,30 @@ export function AppSidebar({
                   <span>Close Menu</span>
                 </button>
                 <div className="flex items-center gap-3 px-2">
-                  <img
-                    alt="Alex Johnson"
-                    className="h-10 w-10 shrink-0 rounded-full object-cover"
-                    src="https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=crop&w=128&q=80"
-                  />
+                  {user?.avatarUrl ? (
+                    <img
+                      alt={profileName}
+                      className="h-10 w-10 shrink-0 rounded-full object-cover"
+                      src={user.avatarUrl}
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      {profileInitial}
+                    </div>
+                  )}
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">Alex Johnson</p>
-                    <p className="truncate text-xs text-slate-500">alex.johnson@goodjob.app</p>
+                    <p className="truncate text-sm font-semibold text-slate-900">{profileName}</p>
+                    <p className="truncate text-xs text-slate-500">{profileEmail}</p>
                   </div>
                 </div>
-                <Link
-                  className="mt-3 flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-                  onClick={onCloseMobile}
-                  to="/login"
+                <button
+                  className="mt-3 w-full flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                  onClick={() => void onLogout()}
+                  type="button"
                 >
                   <AppIcon>log_out</AppIcon>
                   <span>Logout</span>
-                </Link>
+                </button>
               </div>
             </div>
           </div>

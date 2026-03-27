@@ -9,8 +9,7 @@ This repository implements the case study in [`docs/CASE_STUDY_1_PLAN.md`](./doc
 ## Implemented feature scope
 
 - Auth:
-  - Email/password register + login + logout.
-  - Forgot password + reset password.
+  - OAuth-only login + logout.
   - OAuth start/callback endpoints for Google and Slack.
 - Kudos:
   - `POST /kudos` with 10-50 points validation.
@@ -66,6 +65,30 @@ npm run dev:api
 npm run dev:web
 ```
 
+## OAuth local dev (Slack/Google) without third-party cookie issues
+
+For OAuth in local dev, expose the **web app** (`4200`) over HTTPS and keep API calls same-origin through Vite proxy:
+
+1. Start API and web locally (same as above).
+2. Start tunnel to web app:
+
+```bash
+ngrok http 4200
+```
+
+3. Use the tunnel origin in `.env`:
+
+```env
+APP_BASE_URL=https://<your-ngrok-domain>
+API_BASE_URL=https://<your-ngrok-domain>
+SLACK_OAUTH_REDIRECT_URI=https://<your-ngrok-domain>/auth/oauth/slack/callback
+GOOGLE_OAUTH_REDIRECT_URI=https://<your-ngrok-domain>/auth/oauth/google/callback
+VITE_API_BASE_URL=
+VITE_DEV_API_PROXY_TARGET=http://localhost:3000
+```
+
+This keeps OAuth callback + session cookie on the same origin, avoiding browser third-party cookie blocking during local development.
+
 ## Nx tasks
 
 - API serve: `npm exec nx run @org/api:serve`
@@ -76,7 +99,7 @@ npm run dev:web
 
 ## Key API routes
 
-- Auth: `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/oauth/:provider/start`, `/auth/oauth/:provider/callback`
+- Auth: `/auth/logout`, `/auth/me`, `/auth/oauth/:provider/start`, `/auth/oauth/:provider/callback`
 - Upload: `/uploads/presign`, `/uploads/complete`
 - Kudos/Feed: `/kudos`, `/feed`, `/kudos/:id/reactions`, `/kudos/:id/comments`
 - Rewards: `/rewards`, `/rewards/:id/redeem`

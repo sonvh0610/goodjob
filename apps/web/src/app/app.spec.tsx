@@ -40,6 +40,6 @@ describe('App', () => {
 
   it('should show login page when unauthenticated', async () => {
     const { findByText } = renderApp();
-    expect(await findByText(/login/gi)).toBeTruthy();
+    expect(await findByText(/sign in to goodjob/i)).toBeTruthy();
   });
 });
