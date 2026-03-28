@@ -14,9 +14,7 @@ import { mediaValidationQueue } from '../../workers/media.worker.js';
 
 const MAX_IMAGE_BYTES = 1 * 1024 * 1024;
 
-function readMultipartFieldValue(
-  field: unknown
-) {
+function readMultipartFieldValue(field: unknown) {
   if (Array.isArray(field)) {
     return readMultipartFieldValue(field[0]);
   }
