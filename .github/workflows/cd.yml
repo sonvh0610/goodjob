@@ -147,6 +147,5 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN" --cwd=apps/web
-          npx vercel@latest build --prod --token="$VERCEL_TOKEN" --cwd=apps/web
-          npx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN" --cwd=apps/web
+          npm exec nx run @org/web:build
+          npx vercel@latest deploy apps/web/dist --prod --public --yes --token="$VERCEL_TOKEN"
