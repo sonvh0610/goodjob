@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.toString() ?? '';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.toString() ?? '';
 
 export function apiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
@@ -56,17 +55,22 @@ function toReadableError(
     : [];
 
   const fieldErrors = record.fieldErrors;
-  if (fieldErrors && typeof fieldErrors === 'object' && !Array.isArray(fieldErrors)) {
-    const perFieldMessages = Object.entries(fieldErrors as Record<string, unknown>)
-      .flatMap(([fieldName, fieldValue]) => {
-        if (!Array.isArray(fieldValue)) {
-          return [];
-        }
-        return fieldValue
-          .map((item) => toReadableError(item, '', path))
-          .filter((message) => message.length > 0)
-          .map((message) => `${fieldName}: ${message}`);
-      });
+  if (
+    fieldErrors &&
+    typeof fieldErrors === 'object' &&
+    !Array.isArray(fieldErrors)
+  ) {
+    const perFieldMessages = Object.entries(
+      fieldErrors as Record<string, unknown>
+    ).flatMap(([fieldName, fieldValue]) => {
+      if (!Array.isArray(fieldValue)) {
+        return [];
+      }
+      return fieldValue
+        .map((item) => toReadableError(item, '', path))
+        .filter((message) => message.length > 0)
+        .map((message) => `${fieldName}: ${message}`);
+    });
     if (formErrors.length > 0 || perFieldMessages.length > 0) {
       return [...formErrors, ...perFieldMessages].join('; ');
     }
@@ -102,7 +106,9 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const errBody = await response.json().catch(() => null);
-    throw new Error(toReadableError(errBody, `Request failed (${response.status})`));
+    throw new Error(
+      toReadableError(errBody, `Request failed (${response.status})`)
+    );
   }
 
   if (response.status === 204) {
