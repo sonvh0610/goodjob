@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { wsUrl } from '../../../lib/api';
 import { uploadManyMedia } from '../../../lib/media';
 import { getUserFacingError } from '../../../lib/user-errors';
 import type { FeedItem, KudoMedia } from '@org/shared';
 import { createComment, fetchFeed, toggleReaction } from '../api';
+import { extractUniqueTags, normalizeTag } from '../tagging';
 
 type ViewerState = {
   medias: KudoMedia[];
@@ -21,6 +22,16 @@ export function useKudoFeed() {
     {}
   );
   const [viewer, setViewer] = useState<ViewerState | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  const filteredItems = useMemo(() => {
+    if (!selectedTag) return items;
+    return items.filter((item) =>
+      extractUniqueTags(item.description)
+        .map((tag) => normalizeTag(tag))
+        .includes(selectedTag)
+    );
+  }, [items, selectedTag]);
 
   const loadFeed = async (nextCursor?: string | null) => {
     if (loading) return;
@@ -142,6 +153,7 @@ export function useKudoFeed() {
 
   return {
     items,
+    filteredItems,
     cursor,
     loading,
     error,
@@ -159,5 +171,7 @@ export function useKudoFeed() {
     closeViewer,
     viewPrev,
     viewNext,
+    selectedTag,
+    setSelectedTag,
   };
 }

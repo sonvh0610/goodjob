@@ -2,12 +2,14 @@ import { useEffect, useRef } from 'react';
 import { KudoCommentComposer } from '../features/kudos/components/KudoCommentComposer';
 import { KudoMediaGrid } from '../features/kudos/components/KudoMediaGrid';
 import { KudoMediaViewerModal } from '../features/kudos/components/KudoMediaViewerModal';
+import { KudoTaggedText } from '../features/kudos/components/KudoTaggedText';
 import { ReactionToggleGroup } from '../features/kudos/components/ReactionToggleGroup';
 import { useKudoFeed } from '../features/kudos/hooks/useKudoFeed';
 
 export default function KudoFeed() {
   const {
     items,
+    filteredItems,
     cursor,
     loading,
     error,
@@ -25,6 +27,8 @@ export default function KudoFeed() {
     closeViewer,
     viewPrev,
     viewNext,
+    selectedTag,
+    setSelectedTag,
   } = useKudoFeed();
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
@@ -67,9 +71,23 @@ export default function KudoFeed() {
         </header>
 
         {error ? <p className="mb-4 text-sm text-red-600">{error}</p> : null}
+        {selectedTag ? (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-primary-container/60 px-3 py-2">
+            <p className="text-sm text-on-primary-container">
+              Filtering by <span className="font-semibold">#{selectedTag}</span>
+            </p>
+            <button
+              className="cursor-pointer rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-on-surface"
+              type="button"
+              onClick={() => setSelectedTag(null)}
+            >
+              Clear
+            </button>
+          </div>
+        ) : null}
 
         <div className="space-y-4">
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <article
               key={item.id}
               className="rounded-2xl bg-surface-container-lowest p-5 shadow-[0_12px_40px_rgba(55,39,77,0.06)]"
@@ -83,7 +101,11 @@ export default function KudoFeed() {
                     {item.senderName} sent{' '}
                     <span className="text-primary">{item.points}</span> points
                   </h2>
-                  <p className="mt-2 text-on-surface">{item.description}</p>
+                  <KudoTaggedText
+                    text={item.description}
+                    className="mt-2 flex flex-wrap items-center gap-1 text-on-surface"
+                    onTagClick={setSelectedTag}
+                  />
                 </div>
                 <span className="shrink-0 rounded-full bg-primary-container px-3 py-1 text-xs font-bold text-on-primary-container">
                   +{item.points}
@@ -169,6 +191,13 @@ export default function KudoFeed() {
               />
             </article>
           ))}
+          {!loading && filteredItems.length === 0 ? (
+            <div className="rounded-2xl bg-surface-container-lowest p-6 text-on-surface-variant">
+              {selectedTag
+                ? `No kudos found with #${selectedTag}.`
+                : 'No kudos yet.'}
+            </div>
+          ) : null}
         </div>
 
         {cursor ? <div className="mt-6 h-10" ref={loadMoreRef} /> : null}

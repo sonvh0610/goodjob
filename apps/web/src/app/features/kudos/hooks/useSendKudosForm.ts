@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { uploadManyMedia } from '../../../lib/media';
 import { getUserFacingError } from '../../../lib/user-errors';
 import { listKudoUsers, sendKudo } from '../api';
+import { extractUniqueTags, mergeRecentTags, readRecentTags, saveRecentTags } from '../tagging';
 
 export function useSendKudosForm() {
   const navigate = useNavigate();
@@ -52,6 +53,11 @@ export function useSendKudosForm() {
         description,
         mediaAssetIds,
       });
+      const tags = extractUniqueTags(description);
+      if (tags.length > 0) {
+        const merged = mergeRecentTags(readRecentTags(), tags);
+        saveRecentTags(merged);
+      }
       navigate('/feed');
     } catch (requestError) {
       setError(

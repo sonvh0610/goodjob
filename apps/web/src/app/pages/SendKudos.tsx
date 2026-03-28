@@ -1,4 +1,7 @@
+import { useRef } from 'react';
 import { KudosMediaDropzone } from '../components/media/KudosMediaDropzone';
+import { KudoTaggedText } from '../features/kudos/components/KudoTaggedText';
+import { useKudoTagSuggestions } from '../features/kudos/hooks/useKudoTagSuggestions';
 import { useSendKudosForm } from '../features/kudos/hooks/useSendKudosForm';
 
 export default function SendKudos() {
@@ -18,6 +21,20 @@ export default function SendKudos() {
     setError,
     onSubmit,
   } = useSendKudosForm();
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const {
+    suggestions,
+    selectedIndex,
+    showSuggestions,
+    onTextareaChange,
+    onTextareaSelectionChange,
+    onTextareaKeyDown,
+    applySuggestion,
+  } = useKudoTagSuggestions({
+    value: description,
+    onChange: setDescription,
+    textareaRef,
+  });
 
   return (
     <div className="min-h-[calc(100vh-5rem)] px-4 py-6 sm:px-6 lg:px-8 md:py-8 bg-surface-container-low">
@@ -99,14 +116,68 @@ export default function SendKudos() {
             <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
               Kudos Message
             </label>
-            <textarea
-              className="w-full rounded-xl border border-surface-container bg-white px-4 py-3 text-on-surface"
-              rows={5}
-              value={description}
-              placeholder="What did they do great?"
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <textarea
+                ref={textareaRef}
+                className="w-full rounded-xl border border-surface-container bg-white px-4 py-3 text-on-surface"
+                rows={5}
+                value={description}
+                placeholder="What did they do great? Try tags like #Teamwork"
+                onChange={(event) =>
+                  onTextareaChange(
+                    event.target.value,
+                    event.target.selectionStart ?? event.target.value.length
+                  )
+                }
+                onClick={(event) =>
+                  onTextareaSelectionChange(event.currentTarget.selectionStart ?? 0)
+                }
+                onKeyUp={(event) =>
+                  onTextareaSelectionChange(event.currentTarget.selectionStart ?? 0)
+                }
+                onSelect={(event) =>
+                  onTextareaSelectionChange(event.currentTarget.selectionStart ?? 0)
+                }
+                onKeyDown={onTextareaKeyDown}
+                required
+              />
+              {showSuggestions ? (
+                <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-xl border border-surface-container bg-white p-2 shadow-lg">
+                  <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Recent tags
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.map((tag, index) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
+                          selectedIndex === index
+                            ? 'border-primary bg-primary text-on-primary'
+                            : 'border-surface-container bg-surface-container-low text-on-surface hover:bg-surface-container'
+                        }`}
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          applySuggestion(tag);
+                        }}
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="rounded-xl bg-surface-container-low px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                Preview
+              </p>
+              <KudoTaggedText
+                text={description || 'Your kudos message preview will appear here.'}
+                className="mt-2 whitespace-pre-wrap text-sm text-on-surface"
+                tagClassName="rounded-full bg-primary-container px-2 py-0.5 text-xs font-semibold text-on-primary-container"
+              />
+            </div>
           </div>
 
           <label className="block">
