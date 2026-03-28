@@ -113,10 +113,16 @@ export async function apiRequest<T>(
 }
 
 export function wsUrl(path: string): string {
-  const url = API_BASE_URL
-    ? new URL(API_BASE_URL)
+  const baseUrl = API_BASE_URL
+    ? new URL(API_BASE_URL, window.location.origin)
     : new URL(window.location.origin);
+  const url = new URL(baseUrl.toString());
+  const basePath = baseUrl.pathname.endsWith('/')
+    ? baseUrl.pathname.slice(0, -1)
+    : baseUrl.pathname;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  url.pathname = path;
+  url.pathname = `${basePath}${normalizedPath}`.replace(/\/{2,}/g, '/');
   return url.toString();
 }

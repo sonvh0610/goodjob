@@ -146,6 +146,8 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VITE_API_BASE_URL: /api
+          PROD_API_ORIGIN: http://${{ secrets.PROD_SSH_HOST }}
         run: |
           npm exec nx run @org/web:build
           rm -rf .vercel/output
@@ -155,9 +157,11 @@ jobs:
           {
             "version": 3,
             "routes": [
+              { "src": "^/api/(.*)$", "dest": "__PROD_API_ORIGIN__/$1" },
               { "handle": "filesystem" },
               { "src": "/.*", "dest": "/index.html" }
             ]
           }
           EOF
+          sed -i "s|__PROD_API_ORIGIN__|${PROD_API_ORIGIN}|g" .vercel/output/config.json
           npx vercel@latest deploy --prebuilt --prod --public --yes --token="$VERCEL_TOKEN"
