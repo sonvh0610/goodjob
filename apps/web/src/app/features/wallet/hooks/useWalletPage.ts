@@ -8,15 +8,16 @@ import {
 } from '../api';
 
 export function useWalletPage() {
-  const [wallet, setWallet] = useState<Awaited<ReturnType<typeof fetchWallet>> | null>(
-    null
-  );
+  const [wallet, setWallet] = useState<Awaited<
+    ReturnType<typeof fetchWallet>
+  > | null>(null);
   const [transactions, setTransactions] = useState<WalletTransactionItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
   const [loadingMoreTransactions, setLoadingMoreTransactions] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadingInitialTransactions, setLoadingInitialTransactions] = useState(false);
+  const [loadingInitialTransactions, setLoadingInitialTransactions] =
+    useState(false);
 
   const loadWalletPageData = useCallback(async () => {
     try {
@@ -55,7 +56,8 @@ export function useWalletPage() {
       setError(
         getUserFacingError(requestError, {
           context: 'wallet-load',
-          fallback: 'Unable to load more transactions right now. Please try again.',
+          fallback:
+            'Unable to load more transactions right now. Please try again.',
         })
       );
     } finally {

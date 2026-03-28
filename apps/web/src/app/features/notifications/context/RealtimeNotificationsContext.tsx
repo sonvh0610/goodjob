@@ -43,7 +43,8 @@ function buildBrowserNotification(payload: Record<string, unknown>): {
 
   if (payload.type === 'kudo_received') {
     const senderName =
-      typeof payload.senderName === 'string' && payload.senderName.trim().length > 0
+      typeof payload.senderName === 'string' &&
+      payload.senderName.trim().length > 0
         ? payload.senderName
         : 'A teammate';
     const points =
@@ -149,32 +150,32 @@ export function RealtimeNotificationsProvider({ children }: PropsWithChildren) {
       path: '/notifications/stream',
       onFallback: refreshUnreadCount,
       onMessage: (event) => {
-      const payload = JSON.parse(event.data) as RealtimeNotificationEvent;
-      if (payload.event !== 'notification.new') {
-        return;
-      }
+        const payload = JSON.parse(event.data) as RealtimeNotificationEvent;
+        if (payload.event !== 'notification.new') {
+          return;
+        }
 
-      const details = payload.payload ?? {};
-      if (details.status === 'connected') {
-        return;
-      }
+        const details = payload.payload ?? {};
+        if (details.status === 'connected') {
+          return;
+        }
 
-      const content = buildBrowserNotification(details);
-      const targetPath = getNotificationTargetPath(details);
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const toast: NotificationToast = {
-        id,
-        title: content.title,
-        body: content.body,
-        targetPath,
-      };
-      setToasts((prev) => [toast, ...prev].slice(0, 4));
-      window.setTimeout(() => {
-        setToasts((prev) => prev.filter((item) => item.id !== id));
-      }, 5000);
+        const content = buildBrowserNotification(details);
+        const targetPath = getNotificationTargetPath(details);
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const toast: NotificationToast = {
+          id,
+          title: content.title,
+          body: content.body,
+          targetPath,
+        };
+        setToasts((prev) => [toast, ...prev].slice(0, 4));
+        window.setTimeout(() => {
+          setToasts((prev) => prev.filter((item) => item.id !== id));
+        }, 5000);
 
-      void refreshUnreadCount();
-      void notifyInBrowser(details);
+        void refreshUnreadCount();
+        void notifyInBrowser(details);
       },
     });
   }, [refreshUnreadCount, user]);

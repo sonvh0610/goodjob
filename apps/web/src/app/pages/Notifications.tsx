@@ -53,7 +53,9 @@ function getNotificationKudoId(item: NotificationItem): string | null {
   if (item.type !== 'kudo_received' && item.type !== 'kudo_commented') {
     return null;
   }
-  return typeof item.payloadJson.kudoId === 'string' ? item.payloadJson.kudoId : null;
+  return typeof item.payloadJson.kudoId === 'string'
+    ? item.payloadJson.kudoId
+    : null;
 }
 
 export default function Notifications() {
