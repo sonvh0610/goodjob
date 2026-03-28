@@ -100,7 +100,10 @@ async function getOidcDiscovery(env: ReturnType<typeof getEnv>) {
 
   if (!oidcDiscoveryPromise) {
     oidcDiscoveryPromise = fetch(
-      new URL('/.well-known/openid-configuration', env.OIDC_ISSUER_URL).toString()
+      new URL(
+        '/.well-known/openid-configuration',
+        env.OIDC_ISSUER_URL
+      ).toString()
     )
       .then(async (response) => {
         if (!response.ok) {
@@ -199,9 +202,12 @@ async function resolveOauthUser(
         tokenData.authed_user?.access_token ?? tokenData.access_token;
 
       if (tokenData.ok && slackUserAccessToken) {
-        const profileResp = await fetch('https://slack.com/api/users.identity', {
-          headers: { authorization: `Bearer ${slackUserAccessToken}` },
-        });
+        const profileResp = await fetch(
+          'https://slack.com/api/users.identity',
+          {
+            headers: { authorization: `Bearer ${slackUserAccessToken}` },
+          }
+        );
         if (profileResp.ok) {
           const profileData = (await profileResp.json()) as {
             ok?: boolean;
@@ -314,10 +320,14 @@ export default async function authRoutes(fastify: FastifyInstance) {
     });
   });
 
-  fastify.get('/csrf', { preHandler: fastify.requireAuth }, async (_request, reply) => {
-    const csrfToken = setCsrfCookie(reply, fastify.appEnv);
-    return reply.send({ csrfToken });
-  });
+  fastify.get(
+    '/csrf',
+    { preHandler: fastify.requireAuth },
+    async (_request, reply) => {
+      const csrfToken = setCsrfCookie(reply, fastify.appEnv);
+      return reply.send({ csrfToken });
+    }
+  );
 
   fastify.post('/logout', async (request, reply) => {
     const token = request.cookies[fastify.appEnv.SESSION_COOKIE_NAME];
@@ -329,13 +339,17 @@ export default async function authRoutes(fastify: FastifyInstance) {
     return reply.send({ ok: true });
   });
 
-  fastify.get('/me', { preHandler: fastify.requireAuth }, async (request, reply) => {
-    reply.header('Cache-Control', 'no-store');
-    reply.header('Pragma', 'no-cache');
-    reply.header('Expires', '0');
-    const csrfToken = setCsrfCookie(reply, fastify.appEnv);
-    return { user: request.user, csrfToken };
-  });
+  fastify.get(
+    '/me',
+    { preHandler: fastify.requireAuth },
+    async (request, reply) => {
+      reply.header('Cache-Control', 'no-store');
+      reply.header('Pragma', 'no-cache');
+      reply.header('Expires', '0');
+      const csrfToken = setCsrfCookie(reply, fastify.appEnv);
+      return { user: request.user, csrfToken };
+    }
+  );
 
   fastify.get('/oidc/start', async (_request, reply) => {
     if (!getConfiguredProviders(fastify.appEnv).includes('oidc')) {
@@ -372,19 +386,28 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
 
     const state = makeToken(16);
-    await redis.setex(`${OAUTH_STATE_KEY_PREFIX}${state}`, 600, provider.provider);
+    await redis.setex(
+      `${OAUTH_STATE_KEY_PREFIX}${state}`,
+      600,
+      provider.provider
+    );
 
     if (provider.provider === 'google') {
       if (
         !fastify.appEnv.GOOGLE_OAUTH_CLIENT_ID ||
         !fastify.appEnv.GOOGLE_OAUTH_REDIRECT_URI
       ) {
-        return reply.status(400).send({ error: 'Google OAuth is not configured' });
+        return reply
+          .status(400)
+          .send({ error: 'Google OAuth is not configured' });
       }
       const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
       url.searchParams.set('response_type', 'code');
       url.searchParams.set('client_id', fastify.appEnv.GOOGLE_OAUTH_CLIENT_ID);
-      url.searchParams.set('redirect_uri', fastify.appEnv.GOOGLE_OAUTH_REDIRECT_URI);
+      url.searchParams.set(
+        'redirect_uri',
+        fastify.appEnv.GOOGLE_OAUTH_REDIRECT_URI
+      );
       url.searchParams.set('scope', 'openid email profile');
       url.searchParams.set('state', state);
       return reply.send({ url: url.toString() });
@@ -398,7 +421,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
     const url = new URL('https://slack.com/oauth/v2/authorize');
     url.searchParams.set('client_id', fastify.appEnv.SLACK_OAUTH_CLIENT_ID);
-    url.searchParams.set('redirect_uri', fastify.appEnv.SLACK_OAUTH_REDIRECT_URI);
+    url.searchParams.set(
+      'redirect_uri',
+      fastify.appEnv.SLACK_OAUTH_REDIRECT_URI
+    );
     url.searchParams.set('user_scope', 'identity.basic,identity.email');
     url.searchParams.set('state', state);
     return reply.send({ url: url.toString() });
@@ -410,7 +436,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Missing code/state' });
     }
 
-    const oidcUser = await resolveOidcUser(query.code, query.state, fastify.appEnv);
+    const oidcUser = await resolveOidcUser(
+      query.code,
+      query.state,
+      fastify.appEnv
+    );
     await destroyUserSessions(oidcUser.id);
     const session = await createSession(oidcUser.id);
     reply.setCookie(
@@ -432,13 +462,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Missing code/state' });
     }
 
-    const stateProvider = await redis.get(`${OAUTH_STATE_KEY_PREFIX}${query.state}`);
+    const stateProvider = await redis.get(
+      `${OAUTH_STATE_KEY_PREFIX}${query.state}`
+    );
     if (!stateProvider || stateProvider !== provider.provider) {
       return reply.status(400).send({ error: 'Invalid OAuth state' });
     }
     await redis.del(`${OAUTH_STATE_KEY_PREFIX}${query.state}`);
 
-    const oauthUser = await resolveOauthUser(provider.provider, query.code, fastify.appEnv);
+    const oauthUser = await resolveOauthUser(
+      provider.provider,
+      query.code,
+      fastify.appEnv
+    );
     await destroyUserSessions(oauthUser.id);
     const session = await createSession(oauthUser.id);
     reply.setCookie(

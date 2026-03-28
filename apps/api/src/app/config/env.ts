@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   PORT: z.coerce.number().default(3000),
   HOST: z.string().default('0.0.0.0'),
   DATABASE_URL: z.string().min(1),
@@ -9,7 +11,11 @@ const envSchema = z.object({
   APP_BASE_URL: z.string().url().default('http://localhost:4200'),
   API_BASE_URL: z.string().url().default('http://localhost:3000'),
   SESSION_COOKIE_NAME: z.string().default('goodjob_session'),
-  SESSION_TTL_HOURS: z.coerce.number().int().positive().default(24 * 7),
+  SESSION_TTL_HOURS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(24 * 7),
   JWT_SECRET: z.string().min(32),
   CSRF_COOKIE_NAME: z.string().default('goodjob_csrf'),
   CSRF_HEADER_NAME: z.string().default('x-csrf-token'),

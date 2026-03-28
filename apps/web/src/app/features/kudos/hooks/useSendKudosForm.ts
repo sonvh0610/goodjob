@@ -4,7 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { uploadManyMedia } from '../../../lib/media';
 import { getUserFacingError } from '../../../lib/user-errors';
 import { listKudoUsers, sendKudo } from '../api';
-import { extractUniqueTags, mergeRecentTags, readRecentTags, saveRecentTags } from '../tagging';
+import {
+  extractUniqueTags,
+  mergeRecentTags,
+  readRecentTags,
+  saveRecentTags,
+} from '../tagging';
 
 export function useSendKudosForm() {
   const navigate = useNavigate();

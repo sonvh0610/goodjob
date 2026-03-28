@@ -262,8 +262,12 @@ describe('case study backend coverage', () => {
       )
     );
 
-    const successes = responses.filter((response) => response.statusCode === 201);
-    const failures = responses.filter((response) => response.statusCode === 400);
+    const successes = responses.filter(
+      (response) => response.statusCode === 201
+    );
+    const failures = responses.filter(
+      (response) => response.statusCode === 400
+    );
 
     expect(successes).toHaveLength(4);
     expect(failures).toHaveLength(1);
@@ -352,8 +356,12 @@ describe('case study backend coverage', () => {
       }),
     ]);
 
-    const successCount = responses.filter((response) => response.statusCode === 201).length;
-    const conflictCount = responses.filter((response) => response.statusCode === 409).length;
+    const successCount = responses.filter(
+      (response) => response.statusCode === 201
+    ).length;
+    const conflictCount = responses.filter(
+      (response) => response.statusCode === 409
+    ).length;
 
     expect(successCount).toBe(1);
     expect(conflictCount).toBe(1);

@@ -84,7 +84,9 @@ export default function KudoDetail() {
     setSendingComment(true);
     try {
       const mediaAssetIds =
-        commentFiles.length > 0 ? await uploadManyMedia(commentFiles) : undefined;
+        commentFiles.length > 0
+          ? await uploadManyMedia(commentFiles)
+          : undefined;
       await createComment({
         kudoId: item.id,
         text: text || undefined,
@@ -117,12 +119,16 @@ export default function KudoDetail() {
   const toggleWatch = async () => {
     if (!item) return;
     const nextWatched = !item.watchedByViewer;
-    setItem((prev) => (prev ? { ...prev, watchedByViewer: nextWatched } : prev));
+    setItem((prev) =>
+      prev ? { ...prev, watchedByViewer: nextWatched } : prev
+    );
     setWatchMenuOpen(false);
     try {
       await setKudoWatchStatus(item.id, nextWatched);
     } catch (requestError) {
-      setItem((prev) => (prev ? { ...prev, watchedByViewer: !nextWatched } : prev));
+      setItem((prev) =>
+        prev ? { ...prev, watchedByViewer: !nextWatched } : prev
+      );
       setError(
         getUserFacingError(requestError, {
           context: 'feed-load',
@@ -161,7 +167,11 @@ export default function KudoDetail() {
 
         {!loading && !item ? (
           <div className="rounded-2xl bg-surface-container-lowest p-6 text-on-surface-variant">
-            Kudo not found. <Link className="text-primary underline" to="/feed">Go back to feed</Link>.
+            Kudo not found.{' '}
+            <Link className="text-primary underline" to="/feed">
+              Go back to feed
+            </Link>
+            .
           </div>
         ) : null}
 
@@ -173,8 +183,9 @@ export default function KudoDetail() {
                   {new Date(item.createdAt).toLocaleString()}
                 </p>
                 <h2 className="mt-1 text-lg font-bold text-on-surface">
-                  {item.senderName} sent <span className="text-primary">{item.points}</span>{' '}
-                  points to {item.receiverName}
+                  {item.senderName} sent{' '}
+                  <span className="text-primary">{item.points}</span> points to{' '}
+                  {item.receiverName}
                 </h2>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span className="rounded-full bg-primary-container px-2 py-1 font-semibold text-on-primary-container">
@@ -223,7 +234,11 @@ export default function KudoDetail() {
 
             {item.medias.length > 0 ? (
               <div className="mt-4">
-                <KudoMediaGrid medias={item.medias} onOpen={openViewer} alt="Kudo media" />
+                <KudoMediaGrid
+                  medias={item.medias}
+                  onOpen={openViewer}
+                  alt="Kudo media"
+                />
               </div>
             ) : null}
 
@@ -245,11 +260,15 @@ export default function KudoDetail() {
                     key={comment.id}
                     className="rounded-xl bg-surface-container-low px-3 py-2"
                   >
-                    <p className="text-xs text-on-surface-variant">{comment.userName}</p>
+                    <p className="text-xs text-on-surface-variant">
+                      {comment.userName}
+                    </p>
                     {comment.text ? (
                       <p className="text-sm text-on-surface">{comment.text}</p>
                     ) : (
-                      <p className="text-sm italic text-on-surface-variant">Media comment</p>
+                      <p className="text-sm italic text-on-surface-variant">
+                        Media comment
+                      </p>
                     )}
 
                     {comment.medias.length > 0 ? (
@@ -292,7 +311,8 @@ export default function KudoDetail() {
             prev
               ? {
                   ...prev,
-                  index: (prev.index - 1 + prev.medias.length) % prev.medias.length,
+                  index:
+                    (prev.index - 1 + prev.medias.length) % prev.medias.length,
                 }
               : prev
           )

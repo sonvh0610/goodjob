@@ -121,8 +121,8 @@ export default function SendKudos() {
                 </span>
               </div>
               <p className="mt-2 text-xs text-on-surface-variant">
-                Monthly giving wallet is capped at 200 points and resets every UTC
-                month.
+                Monthly giving wallet is capped at 200 points and resets every
+                UTC month.
               </p>
             </div>
 
@@ -146,29 +146,33 @@ export default function SendKudos() {
           </div>
 
           <label className="space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-            Tagged Teammates
-          </span>
-          <select
-            className="min-h-32 w-full rounded-xl border border-surface-container bg-white px-3 py-3 text-on-surface"
-            multiple
-            value={taggedUserIds}
-            onChange={(event) => {
-              const values = Array.from(event.target.selectedOptions, (option) => option.value);
-              setTaggedUserIds(values);
-            }}
-          >
-            {users
-              .filter((item) => item.id !== receiverId)
-              .map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.displayName} ({item.email})
-                </option>
-              ))}
-          </select>
-          <p className="text-xs text-on-surface-variant">
-            Hold command/control to select multiple teammates for real-time notifications.
-          </p>
+            <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+              Tagged Teammates
+            </span>
+            <select
+              className="min-h-32 w-full rounded-xl border border-surface-container bg-white px-3 py-3 text-on-surface"
+              multiple
+              value={taggedUserIds}
+              onChange={(event) => {
+                const values = Array.from(
+                  event.target.selectedOptions,
+                  (option) => option.value
+                );
+                setTaggedUserIds(values);
+              }}
+            >
+              {users
+                .filter((item) => item.id !== receiverId)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.displayName} ({item.email})
+                  </option>
+                ))}
+            </select>
+            <p className="text-xs text-on-surface-variant">
+              Hold command/control to select multiple teammates for real-time
+              notifications.
+            </p>
           </label>
 
           <div className="space-y-3">
@@ -189,13 +193,19 @@ export default function SendKudos() {
                   )
                 }
                 onClick={(event) =>
-                  onTextareaSelectionChange(event.currentTarget.selectionStart ?? 0)
+                  onTextareaSelectionChange(
+                    event.currentTarget.selectionStart ?? 0
+                  )
                 }
                 onKeyUp={(event) =>
-                  onTextareaSelectionChange(event.currentTarget.selectionStart ?? 0)
+                  onTextareaSelectionChange(
+                    event.currentTarget.selectionStart ?? 0
+                  )
                 }
                 onSelect={(event) =>
-                  onTextareaSelectionChange(event.currentTarget.selectionStart ?? 0)
+                  onTextareaSelectionChange(
+                    event.currentTarget.selectionStart ?? 0
+                  )
                 }
                 onKeyDown={onTextareaKeyDown}
                 onBlur={onTextareaBlur}
@@ -233,7 +243,9 @@ export default function SendKudos() {
                 Preview
               </p>
               <KudoTaggedText
-                text={description || 'Your kudos message preview will appear here.'}
+                text={
+                  description || 'Your kudos message preview will appear here.'
+                }
                 className="mt-2 whitespace-pre-wrap text-sm text-on-surface"
                 tagClassName="rounded-full bg-primary-container px-2 py-0.5 text-xs font-semibold text-on-primary-container"
               />

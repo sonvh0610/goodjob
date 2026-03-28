@@ -1,11 +1,6 @@
 import { and, eq, gt } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import {
-  accounts,
-  sessions,
-  users,
-  wallets,
-} from '../db/schema.js';
+import { accounts, sessions, users, wallets } from '../db/schema.js';
 import { hashToken, makeToken } from '../lib/crypto.js';
 import { getEnv } from '../config/env.js';
 
@@ -55,7 +50,9 @@ export async function findSessionUser(
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
-    .where(and(eq(sessions.tokenHash, tokenHash), gt(sessions.expiresAt, new Date())))
+    .where(
+      and(eq(sessions.tokenHash, tokenHash), gt(sessions.expiresAt, new Date()))
+    )
     .limit(1);
 
   const user = rows[0];
@@ -67,7 +64,9 @@ export async function findSessionUser(
 }
 
 export async function destroySession(sessionToken: string): Promise<void> {
-  await db.delete(sessions).where(eq(sessions.tokenHash, hashToken(sessionToken)));
+  await db
+    .delete(sessions)
+    .where(eq(sessions.tokenHash, hashToken(sessionToken)));
 }
 
 export async function destroyUserSessions(userId: string): Promise<void> {
@@ -91,7 +90,8 @@ export async function upsertOauthAccount(input: {
     const inserted = await db
       .insert(users)
       .values({
-        email: input.email ?? `${input.provider}-${input.providerAccountId}@local`,
+        email:
+          input.email ?? `${input.provider}-${input.providerAccountId}@local`,
         displayName: input.displayName ?? `${input.provider} user`,
         avatarUrl: input.avatarUrl,
       })

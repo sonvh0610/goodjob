@@ -110,8 +110,8 @@ export default function KudoFeed() {
                       to={`/feed/${item.id}`}
                     >
                       {item.senderName} sent{' '}
-                      <span className="text-primary">{item.points}</span> points
-                      {' '}to {item.receiverName}
+                      <span className="text-primary">{item.points}</span> points{' '}
+                      to {item.receiverName}
                     </Link>
                   </h2>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
@@ -139,7 +139,9 @@ export default function KudoFeed() {
                     className="inline-flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container"
                     type="button"
                     onClick={() =>
-                      setOpenMenuId((prev) => (prev === item.id ? null : item.id))
+                      setOpenMenuId((prev) =>
+                        prev === item.id ? null : item.id
+                      )
                     }
                   >
                     <AppIcon>more_horiz</AppIcon>
@@ -195,7 +197,9 @@ export default function KudoFeed() {
                         {comment.userName}
                       </p>
                       {comment.text ? (
-                        <p className="text-sm text-on-surface">{comment.text}</p>
+                        <p className="text-sm text-on-surface">
+                          {comment.text}
+                        </p>
                       ) : (
                         <p className="text-sm italic text-on-surface-variant">
                           Media comment
@@ -253,7 +257,9 @@ export default function KudoFeed() {
 
         {cursor ? <div className="mt-6 h-10" ref={loadMoreRef} /> : null}
         {loading && items.length > 0 ? (
-          <p className="mt-2 text-sm text-on-surface-variant">Loading more feed items...</p>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            Loading more feed items...
+          </p>
         ) : null}
       </div>
 

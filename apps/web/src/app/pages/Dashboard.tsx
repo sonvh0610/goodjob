@@ -87,7 +87,8 @@ export default function Dashboard() {
     if (!monthKey) return 'Current Month';
 
     const [year, month] = monthKey.split('-').map(Number);
-    if (!Number.isFinite(year) || !Number.isFinite(month)) return 'Current Month';
+    if (!Number.isFinite(year) || !Number.isFinite(month))
+      return 'Current Month';
 
     const date = new Date(Date.UTC(year, month - 1, 1));
     return new Intl.DateTimeFormat(undefined, {
@@ -245,9 +246,14 @@ export default function Dashboard() {
           <section className="md:col-span-8 rounded-xl bg-surface-container-lowest p-6 shadow-[0_12px_40px_rgba(55,39,77,0.06)]">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-lg font-bold text-on-surface">AI Achievement Summary</h3>
+                <h3 className="text-lg font-bold text-on-surface">
+                  AI Achievement Summary
+                </h3>
                 <p className="mt-1 text-sm text-on-surface-variant">
-                  Snapshot for {summary?.monthKey ?? wallet?.givingWallet.monthKey ?? 'this month'}
+                  Snapshot for{' '}
+                  {summary?.monthKey ??
+                    wallet?.givingWallet.monthKey ??
+                    'this month'}
                 </p>
               </div>
               <Link

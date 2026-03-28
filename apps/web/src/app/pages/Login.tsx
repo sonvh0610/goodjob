@@ -6,14 +6,18 @@ import { getUserFacingError } from '../lib/user-errors';
 
 export function Login() {
   const [error, setError] = useState<string | null>(null);
-  const [providers, setProviders] = useState<AuthProvidersResponse['providers']>([]);
+  const [providers, setProviders] = useState<
+    AuthProvidersResponse['providers']
+  >([]);
   const [loadingProvider, setLoadingProvider] = useState<
     'oidc' | 'google' | 'slack' | null
   >(null);
 
   useEffect(() => {
     void (async () => {
-      const response = await apiRequest<AuthProvidersResponse>('/auth/providers');
+      const response = await apiRequest<AuthProvidersResponse>(
+        '/auth/providers'
+      );
       setProviders(response.providers);
     })().catch(() => {
       setProviders(['oidc', 'google', 'slack']);

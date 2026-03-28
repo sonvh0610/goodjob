@@ -54,7 +54,9 @@ export default function MyWallet() {
             <p className="mt-3 text-5xl font-black text-primary">
               {wallet?.receivedWallet.availablePoints ?? 0}
             </p>
-            <p className="mt-1 text-sm text-on-surface-variant">Points available to redeem</p>
+            <p className="mt-1 text-sm text-on-surface-variant">
+              Points available to redeem
+            </p>
             <p className="mt-4 text-xs text-on-surface-variant">
               Last update:{' '}
               {wallet
@@ -83,7 +85,8 @@ export default function MyWallet() {
               />
             </div>
             <p className="mt-4 text-xs text-on-surface-variant">
-              Resets on the first day of each UTC month. Unused giving points expire.
+              Resets on the first day of each UTC month. Unused giving points
+              expire.
             </p>
           </section>
         </div>
@@ -97,9 +100,15 @@ export default function MyWallet() {
         <section className="mt-8 rounded-2xl bg-surface-container-lowest p-6 shadow-[0_12px_40px_rgba(55,39,77,0.06)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-on-surface">AI Monthly Summary</h2>
+              <h2 className="text-xl font-bold text-on-surface">
+                AI Monthly Summary
+              </h2>
               <p className="mt-1 text-sm text-on-surface-variant">
-                Highlights for {summary?.monthKey ?? wallet?.givingWallet.monthKey ?? 'this month'}.
+                Highlights for{' '}
+                {summary?.monthKey ??
+                  wallet?.givingWallet.monthKey ??
+                  'this month'}
+                .
               </p>
             </div>
             <button
@@ -113,33 +122,49 @@ export default function MyWallet() {
           </div>
           {summary ? (
             <div className="mt-4 space-y-4">
-              <p className="text-sm leading-7 text-on-surface">{summary.summary}</p>
+              <p className="text-sm leading-7 text-on-surface">
+                {summary.summary}
+              </p>
               <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
                 <div className="rounded-xl bg-surface-container-low px-3 py-3">
                   <p className="text-on-surface-variant">Kudos sent</p>
-                  <p className="mt-1 font-bold text-on-surface">{summary.sourceStats.kudosSent}</p>
+                  <p className="mt-1 font-bold text-on-surface">
+                    {summary.sourceStats.kudosSent}
+                  </p>
                 </div>
                 <div className="rounded-xl bg-surface-container-low px-3 py-3">
                   <p className="text-on-surface-variant">Kudos received</p>
-                  <p className="mt-1 font-bold text-on-surface">{summary.sourceStats.kudosReceived}</p>
+                  <p className="mt-1 font-bold text-on-surface">
+                    {summary.sourceStats.kudosReceived}
+                  </p>
                 </div>
                 <div className="rounded-xl bg-surface-container-low px-3 py-3">
                   <p className="text-on-surface-variant">Points given</p>
-                  <p className="mt-1 font-bold text-on-surface">{summary.sourceStats.pointsGiven}</p>
+                  <p className="mt-1 font-bold text-on-surface">
+                    {summary.sourceStats.pointsGiven}
+                  </p>
                 </div>
                 <div className="rounded-xl bg-surface-container-low px-3 py-3">
                   <p className="text-on-surface-variant">Rewards redeemed</p>
-                  <p className="mt-1 font-bold text-on-surface">{summary.sourceStats.rewardsRedeemed}</p>
+                  <p className="mt-1 font-bold text-on-surface">
+                    {summary.sourceStats.rewardsRedeemed}
+                  </p>
                 </div>
               </div>
             </div>
           ) : loadingSummary ? (
-            <p className="mt-4 text-sm text-on-surface-variant">Generating your monthly summary...</p>
+            <p className="mt-4 text-sm text-on-surface-variant">
+              Generating your monthly summary...
+            </p>
           ) : (
-            <p className="mt-4 text-sm text-on-surface-variant">No summary available yet.</p>
+            <p className="mt-4 text-sm text-on-surface-variant">
+              No summary available yet.
+            </p>
           )}
         </section>
-        {hasMoreTransactions ? <div className="h-10" ref={loadMoreRef} /> : null}
+        {hasMoreTransactions ? (
+          <div className="h-10" ref={loadMoreRef} />
+        ) : null}
       </div>
     </div>
   );

@@ -10,34 +10,36 @@ export const uploadPresignBodySchema = z.object({
   durationSeconds: z.number().positive().max(180).optional(),
 });
 
-export const createKudoBodySchema = z.object({
-  receiverId: uuidSchema,
-  points: z.number().int().min(10).max(50),
-  description: z.string().min(5).max(2000),
-  coreValue: z.string().trim().min(2).max(60),
-  taggedUserIds: z.array(uuidSchema).max(10).optional(),
-  mediaAssetIds: z.array(uuidSchema).max(5).optional(),
-  // backward-compatible legacy field
-  mediaAssetId: uuidSchema.optional(),
-}).superRefine((value, ctx) => {
-  if (value.mediaAssetIds && value.mediaAssetIds.length > 5) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Maximum 5 media files per kudo',
-      path: ['mediaAssetIds'],
-    });
-  }
-  if (value.taggedUserIds) {
-    const uniqueCount = new Set(value.taggedUserIds).size;
-    if (uniqueCount !== value.taggedUserIds.length) {
+export const createKudoBodySchema = z
+  .object({
+    receiverId: uuidSchema,
+    points: z.number().int().min(10).max(50),
+    description: z.string().min(5).max(2000),
+    coreValue: z.string().trim().min(2).max(60),
+    taggedUserIds: z.array(uuidSchema).max(10).optional(),
+    mediaAssetIds: z.array(uuidSchema).max(5).optional(),
+    // backward-compatible legacy field
+    mediaAssetId: uuidSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.mediaAssetIds && value.mediaAssetIds.length > 5) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Tagged teammates must be unique',
-        path: ['taggedUserIds'],
+        message: 'Maximum 5 media files per kudo',
+        path: ['mediaAssetIds'],
       });
     }
-  }
-});
+    if (value.taggedUserIds) {
+      const uniqueCount = new Set(value.taggedUserIds).size;
+      if (uniqueCount !== value.taggedUserIds.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Tagged teammates must be unique',
+          path: ['taggedUserIds'],
+        });
+      }
+    }
+  });
 
 export const createReactionBodySchema = z.object({
   emoji: z.string().min(1).max(16),
@@ -76,14 +78,11 @@ export const redeemRewardBodySchema = z.object({
   quantity: z.number().int().min(1).max(1).default(1),
 });
 
-const rewardThumbnailUrlSchema = z.preprocess(
-  (value) => {
-    if (typeof value !== 'string') return value;
-    const trimmed = value.trim();
-    return trimmed.length === 0 ? null : trimmed;
-  },
-  z.string().url().max(1024).nullable().optional()
-);
+const rewardThumbnailUrlSchema = z.preprocess((value) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? null : trimmed;
+}, z.string().url().max(1024).nullable().optional());
 
 export const createRewardBodySchema = z.object({
   name: z.string().min(2).max(140),
@@ -144,7 +143,9 @@ export type ListTopRecognizersQuery = z.infer<
 export type ListWalletTransactionsQuery = z.infer<
   typeof listWalletTransactionsQuerySchema
 >;
-export type ListNotificationsQuery = z.infer<typeof listNotificationsQuerySchema>;
+export type ListNotificationsQuery = z.infer<
+  typeof listNotificationsQuerySchema
+>;
 export type ListRewardsQuery = z.infer<typeof listRewardsQuerySchema>;
 
 export interface KudoUserOption {

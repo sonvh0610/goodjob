@@ -37,24 +37,28 @@ function encodeCursor(costPoints: number, id: string): string {
 }
 
 export default async function rewardRoutes(fastify: FastifyInstance) {
-  fastify.post('/', { preHandler: fastify.requireAuth }, async (request, reply) => {
-    if (request.user?.role !== 'admin') {
-      return reply.status(403).send({ error: 'Admin access required' });
-    }
+  fastify.post(
+    '/',
+    { preHandler: fastify.requireAuth },
+    async (request, reply) => {
+      if (request.user?.role !== 'admin') {
+        return reply.status(403).send({ error: 'Admin access required' });
+      }
 
-    const parsed = createRewardBodySchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.flatten() });
-    }
+      const parsed = createRewardBodySchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.flatten() });
+      }
 
-    const created = await db.insert(rewards).values(parsed.data).returning();
-    const reward = created[0];
-    if (!reward) {
-      return reply.status(500).send({ error: 'Cannot create reward' });
-    }
+      const created = await db.insert(rewards).values(parsed.data).returning();
+      const reward = created[0];
+      if (!reward) {
+        return reply.status(500).send({ error: 'Cannot create reward' });
+      }
 
-    return reply.status(201).send({ reward });
-  });
+      return reply.status(201).send({ reward });
+    }
+  );
 
   fastify.put(
     '/:id',
@@ -77,7 +81,9 @@ export default async function rewardRoutes(fastify: FastifyInstance) {
           thumbnailUrl: parsed.data.thumbnailUrl ?? null,
           costPoints: parsed.data.costPoints,
           stock: parsed.data.stock,
-          ...(parsed.data.active === undefined ? {} : { active: parsed.data.active }),
+          ...(parsed.data.active === undefined
+            ? {}
+            : { active: parsed.data.active }),
         })
         .where(eq(rewards.id, rewardId))
         .returning();
@@ -134,7 +140,10 @@ export default async function rewardRoutes(fastify: FastifyInstance) {
       const items = hasMore ? rows.slice(0, limit) : rows;
       const nextCursor =
         hasMore && items.length > 0
-          ? encodeCursor(items[items.length - 1]!.costPoints, items[items.length - 1]!.id)
+          ? encodeCursor(
+              items[items.length - 1]!.costPoints,
+              items[items.length - 1]!.id
+            )
           : null;
 
       return reply.send({ items, nextCursor });

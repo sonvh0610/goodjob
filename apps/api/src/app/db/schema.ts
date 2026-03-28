@@ -25,7 +25,10 @@ export const feedEventTypeEnum = pgEnum('feed_event_type', [
   'reaction_added',
   'comment_added',
 ]);
-export const pointDirectionEnum = pgEnum('point_direction', ['credit', 'debit']);
+export const pointDirectionEnum = pgEnum('point_direction', [
+  'credit',
+  'debit',
+]);
 export const redemptionStatusEnum = pgEnum('redemption_status', [
   'pending',
   'approved',
@@ -55,7 +58,9 @@ export const accounts = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     provider: varchar('provider', { length: 50 }).notNull(),
-    providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
+    providerAccountId: varchar('provider_account_id', {
+      length: 255,
+    }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -185,10 +190,7 @@ export const kudos = pgTable(
       .notNull(),
   },
   (table) => ({
-    createdAtIdx: index('kudos_created_at_idx').on(
-      table.createdAt,
-      table.id
-    ),
+    createdAtIdx: index('kudos_created_at_idx').on(table.createdAt, table.id),
   })
 );
 
@@ -300,7 +302,9 @@ export const feedEvents = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
     type: feedEventTypeEnum('type').notNull(),
-    payloadJson: jsonb('payload_json').$type<Record<string, unknown>>().notNull(),
+    payloadJson: jsonb('payload_json')
+      .$type<Record<string, unknown>>()
+      .notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -431,7 +435,9 @@ export const notifications = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     type: varchar('type', { length: 40 }).notNull(),
-    payloadJson: jsonb('payload_json').$type<Record<string, unknown>>().notNull(),
+    payloadJson: jsonb('payload_json')
+      .$type<Record<string, unknown>>()
+      .notNull(),
     readAt: timestamp('read_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
@@ -464,16 +470,12 @@ export const aiMonthlySummaries = pgTable(
       .notNull(),
   },
   (table) => ({
-    uniqueUserMonthHash: unique('ai_monthly_summaries_user_month_hash_unique').on(
-      table.userId,
-      table.monthKey,
-      table.contentHash
-    ),
-    userMonthGeneratedIdx: index('ai_monthly_summaries_user_month_generated_idx').on(
-      table.userId,
-      table.monthKey,
-      table.generatedAt
-    ),
+    uniqueUserMonthHash: unique(
+      'ai_monthly_summaries_user_month_hash_unique'
+    ).on(table.userId, table.monthKey, table.contentHash),
+    userMonthGeneratedIdx: index(
+      'ai_monthly_summaries_user_month_generated_idx'
+    ).on(table.userId, table.monthKey, table.generatedAt),
   })
 );
 

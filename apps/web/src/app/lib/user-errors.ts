@@ -62,7 +62,8 @@ const CONTEXT_RULES: Record<UserErrorContext, ErrorRule[]> = {
   'kudos-form-load': [
     {
       includes: ['cannot load send-kudos form data'],
-      message: 'Unable to load form data. Please refresh the page and try again.',
+      message:
+        'Unable to load form data. Please refresh the page and try again.',
     },
   ],
   'kudos-submit': [
@@ -108,7 +109,8 @@ const CONTEXT_RULES: Record<UserErrorContext, ErrorRule[]> = {
     },
     {
       includes: ['tagged teammates cannot include sender or receiver'],
-      message: 'Tagged teammates must be different from the sender and receiver.',
+      message:
+        'Tagged teammates must be different from the sender and receiver.',
     },
     {
       includes: ['invalid tagged teammate selection'],
@@ -189,7 +191,10 @@ export function getUserFacingError(
     return fallback;
   }
 
-  const contextMessage = findRuleMessage(rawMessage, CONTEXT_RULES[context] ?? []);
+  const contextMessage = findRuleMessage(
+    rawMessage,
+    CONTEXT_RULES[context] ?? []
+  );
   if (contextMessage) {
     return contextMessage;
   }

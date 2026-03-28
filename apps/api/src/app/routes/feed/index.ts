@@ -1,6 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { and, asc, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
-import { listFeedQuerySchema, listTopRecognizersQuerySchema, uuidSchema } from '@org/shared';
+import {
+  listFeedQuerySchema,
+  listTopRecognizersQuerySchema,
+  uuidSchema,
+} from '@org/shared';
 import { db } from '../../db/client.js';
 import {
   commentMediaAssets,
@@ -23,7 +27,9 @@ function decodeCursor(
     return null;
   }
   try {
-    const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8')) as {
+    const decoded = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString('utf-8')
+    ) as {
       createdAt: string;
       id: string;
     };
@@ -64,7 +70,9 @@ export default async function feedRoutes(fastify: FastifyInstance) {
     recentLimit = 3
   ) => {
     const kudoIds = rows.map((item) => item.id);
-    const receiverIds = Array.from(new Set(rows.map((item) => item.receiverId)));
+    const receiverIds = Array.from(
+      new Set(rows.map((item) => item.receiverId))
+    );
 
     const [
       mediaRows,
@@ -112,7 +120,10 @@ export default async function feedRoutes(fastify: FastifyInstance) {
               })
               .from(reactions)
               .where(
-                and(inArray(reactions.kudoId, kudoIds), eq(reactions.userId, viewerUserId))
+                and(
+                  inArray(reactions.kudoId, kudoIds),
+                  eq(reactions.userId, viewerUserId)
+                )
               ),
             db
               .select({
@@ -436,90 +447,108 @@ export default async function feedRoutes(fastify: FastifyInstance) {
     }
   );
 
-  fastify.get('/', { preHandler: fastify.requireAuth }, async (request, reply) => {
-    const parsed = listFeedQuerySchema.safeParse(request.query);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: parsed.error.flatten() });
-    }
+  fastify.get(
+    '/',
+    { preHandler: fastify.requireAuth },
+    async (request, reply) => {
+      const parsed = listFeedQuerySchema.safeParse(request.query);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.flatten() });
+      }
 
-    const { limit } = parsed.data;
-    const cursor = decodeCursor(parsed.data.cursor);
-    const rows = await db
-      .select({
-        id: kudos.id,
-        senderId: kudos.senderId,
-        receiverId: kudos.receiverId,
-        points: kudos.points,
-        description: kudos.description,
-        coreValue: kudos.coreValue,
-        mediaAssetId: kudos.mediaAssetId,
-        mediaUrl: mediaAssets.publicUrl,
-        mediaStorageKey: mediaAssets.storageKey,
-        mediaType: mediaAssets.mediaType,
-        createdAt: kudos.createdAt,
-        senderName: users.displayName,
-        senderAvatarUrl: users.avatarUrl,
-      })
-      .from(kudos)
-      .innerJoin(users, eq(kudos.senderId, users.id))
-      .leftJoin(mediaAssets, eq(kudos.mediaAssetId, mediaAssets.id))
-      .where(
-        cursor
-          ? or(
-              lt(kudos.createdAt, new Date(cursor.createdAt)),
-              and(eq(kudos.createdAt, new Date(cursor.createdAt)), lt(kudos.id, cursor.id))
+      const { limit } = parsed.data;
+      const cursor = decodeCursor(parsed.data.cursor);
+      const rows = await db
+        .select({
+          id: kudos.id,
+          senderId: kudos.senderId,
+          receiverId: kudos.receiverId,
+          points: kudos.points,
+          description: kudos.description,
+          coreValue: kudos.coreValue,
+          mediaAssetId: kudos.mediaAssetId,
+          mediaUrl: mediaAssets.publicUrl,
+          mediaStorageKey: mediaAssets.storageKey,
+          mediaType: mediaAssets.mediaType,
+          createdAt: kudos.createdAt,
+          senderName: users.displayName,
+          senderAvatarUrl: users.avatarUrl,
+        })
+        .from(kudos)
+        .innerJoin(users, eq(kudos.senderId, users.id))
+        .leftJoin(mediaAssets, eq(kudos.mediaAssetId, mediaAssets.id))
+        .where(
+          cursor
+            ? or(
+                lt(kudos.createdAt, new Date(cursor.createdAt)),
+                and(
+                  eq(kudos.createdAt, new Date(cursor.createdAt)),
+                  lt(kudos.id, cursor.id)
+                )
+              )
+            : undefined
+        )
+        .orderBy(desc(kudos.createdAt), desc(kudos.id))
+        .limit(limit + 1);
+
+      const hasMore = rows.length > limit;
+      const items = hasMore ? rows.slice(0, limit) : rows;
+      const enrichedItems = await hydrateFeedItems(items, request.user!.id);
+
+      const nextCursor =
+        hasMore && items.length > 0
+          ? encodeCursor(
+              items[items.length - 1]!.createdAt,
+              items[items.length - 1]!.id
             )
-          : undefined
-      )
-      .orderBy(desc(kudos.createdAt), desc(kudos.id))
-      .limit(limit + 1);
+          : null;
 
-    const hasMore = rows.length > limit;
-    const items = hasMore ? rows.slice(0, limit) : rows;
-    const enrichedItems = await hydrateFeedItems(items, request.user!.id);
-
-    const nextCursor =
-      hasMore && items.length > 0
-        ? encodeCursor(items[items.length - 1]!.createdAt, items[items.length - 1]!.id)
-        : null;
-
-    return reply.send({ items: enrichedItems, nextCursor });
-  });
-
-  fastify.get('/:id', { preHandler: fastify.requireAuth }, async (request, reply) => {
-    const params = request.params as { id: string };
-    const idParse = uuidSchema.safeParse(params.id);
-    if (!idParse.success) {
-      return reply.status(400).send({ error: 'Invalid kudo id' });
+      return reply.send({ items: enrichedItems, nextCursor });
     }
+  );
 
-    const rows = await db
-      .select({
-        id: kudos.id,
-        senderId: kudos.senderId,
-        receiverId: kudos.receiverId,
-        points: kudos.points,
-        description: kudos.description,
-        coreValue: kudos.coreValue,
-        mediaAssetId: kudos.mediaAssetId,
-        mediaUrl: mediaAssets.publicUrl,
-        mediaStorageKey: mediaAssets.storageKey,
-        mediaType: mediaAssets.mediaType,
-        createdAt: kudos.createdAt,
-        senderName: users.displayName,
-        senderAvatarUrl: users.avatarUrl,
-      })
-      .from(kudos)
-      .innerJoin(users, eq(kudos.senderId, users.id))
-      .leftJoin(mediaAssets, eq(kudos.mediaAssetId, mediaAssets.id))
-      .where(eq(kudos.id, params.id))
-      .limit(1);
+  fastify.get(
+    '/:id',
+    { preHandler: fastify.requireAuth },
+    async (request, reply) => {
+      const params = request.params as { id: string };
+      const idParse = uuidSchema.safeParse(params.id);
+      if (!idParse.success) {
+        return reply.status(400).send({ error: 'Invalid kudo id' });
+      }
 
-    if (rows.length === 0) {
-      return reply.status(404).send({ error: 'Kudo not found' });
+      const rows = await db
+        .select({
+          id: kudos.id,
+          senderId: kudos.senderId,
+          receiverId: kudos.receiverId,
+          points: kudos.points,
+          description: kudos.description,
+          coreValue: kudos.coreValue,
+          mediaAssetId: kudos.mediaAssetId,
+          mediaUrl: mediaAssets.publicUrl,
+          mediaStorageKey: mediaAssets.storageKey,
+          mediaType: mediaAssets.mediaType,
+          createdAt: kudos.createdAt,
+          senderName: users.displayName,
+          senderAvatarUrl: users.avatarUrl,
+        })
+        .from(kudos)
+        .innerJoin(users, eq(kudos.senderId, users.id))
+        .leftJoin(mediaAssets, eq(kudos.mediaAssetId, mediaAssets.id))
+        .where(eq(kudos.id, params.id))
+        .limit(1);
+
+      if (rows.length === 0) {
+        return reply.status(404).send({ error: 'Kudo not found' });
+      }
+
+      const [item] = await hydrateFeedItems(
+        rows,
+        request.user!.id,
+        Number.MAX_SAFE_INTEGER
+      );
+      return reply.send({ item });
     }
-
-    const [item] = await hydrateFeedItems(rows, request.user!.id, Number.MAX_SAFE_INTEGER);
-    return reply.send({ item });
-  });
+  );
 }

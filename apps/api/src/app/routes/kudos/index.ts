@@ -52,10 +52,15 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
       }
 
       const taggedUserIds = Array.from(new Set(data.taggedUserIds ?? []));
-      if (taggedUserIds.includes(actor.id) || taggedUserIds.includes(data.receiverId)) {
+      if (
+        taggedUserIds.includes(actor.id) ||
+        taggedUserIds.includes(data.receiverId)
+      ) {
         return reply
           .status(400)
-          .send({ error: 'Tagged teammates cannot include sender or receiver' });
+          .send({
+            error: 'Tagged teammates cannot include sender or receiver',
+          });
       }
 
       const taggedUsers =
@@ -72,17 +77,21 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
               .where(inArray(users.id, taggedUserIds));
 
       if (taggedUsers.length !== taggedUserIds.length) {
-        return reply.status(400).send({ error: 'Invalid tagged teammate selection' });
+        return reply
+          .status(400)
+          .send({ error: 'Invalid tagged teammate selection' });
       }
 
       const requestedMediaIds = data.mediaAssetIds?.length
         ? Array.from(new Set(data.mediaAssetIds))
         : data.mediaAssetId
-          ? [data.mediaAssetId]
-          : [];
+        ? [data.mediaAssetId]
+        : [];
 
       if (requestedMediaIds.length > 5) {
-        return reply.status(400).send({ error: 'Maximum 5 media files per kudo' });
+        return reply
+          .status(400)
+          .send({ error: 'Maximum 5 media files per kudo' });
       }
 
       let validMediaIds: string[] = [];
@@ -101,10 +110,14 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
           );
 
         if (rows.length !== requestedMediaIds.length) {
-          return reply.status(400).send({ error: 'Invalid media asset selection' });
+          return reply
+            .status(400)
+            .send({ error: 'Invalid media asset selection' });
         }
         if (rows.some((item) => item.status === 'rejected')) {
-          return reply.status(400).send({ error: 'Invalid media asset selection' });
+          return reply
+            .status(400)
+            .send({ error: 'Invalid media asset selection' });
         }
         validMediaIds = requestedMediaIds;
       }
@@ -152,7 +165,10 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
                 limitPoints: MONTHLY_BUDGET,
               })
               .onConflictDoUpdate({
-                target: [monthlyGivingWallets.userId, monthlyGivingWallets.monthKey],
+                target: [
+                  monthlyGivingWallets.userId,
+                  monthlyGivingWallets.monthKey,
+                ],
                 set: { spentPoints, updatedAt: new Date() },
               })
               .returning();
@@ -192,16 +208,19 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
             );
           }
 
-          await tx.insert(kudoWatchers).values([
-            {
-              kudoId: kudo.id,
-              userId: actor.id,
-            },
-            {
-              kudoId: kudo.id,
-              userId: data.receiverId,
-            },
-          ]).onConflictDoNothing();
+          await tx
+            .insert(kudoWatchers)
+            .values([
+              {
+                kudoId: kudo.id,
+                userId: actor.id,
+              },
+              {
+                kudoId: kudo.id,
+                userId: data.receiverId,
+              },
+            ])
+            .onConflictDoNothing();
 
           if (taggedUserIds.length > 0) {
             await tx.insert(kudoTaggedUsers).values(
@@ -259,7 +278,10 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
               limitPoints: MONTHLY_BUDGET,
             })
             .onConflictDoUpdate({
-              target: [monthlyGivingWallets.userId, monthlyGivingWallets.monthKey],
+              target: [
+                monthlyGivingWallets.userId,
+                monthlyGivingWallets.monthKey,
+              ],
               set: {
                 spentPoints: alreadySpent + data.points,
                 updatedAt: new Date(),
@@ -286,21 +308,26 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
             .where(eq(wallets.userId, data.receiverId));
 
           const recipientIds = Array.from(
-            new Set([data.receiverId, ...taggedUserIds].filter((id) => id !== actor.id))
+            new Set(
+              [data.receiverId, ...taggedUserIds].filter(
+                (id) => id !== actor.id
+              )
+            )
           );
           await tx.insert(notifications).values(
             recipientIds.map((userId) => ({
-                userId,
-                type: userId === data.receiverId ? 'kudo_received' : 'kudo_tagged',
-                payloadJson: {
-                  kudoId: kudo.id,
-                  senderId: actor.id,
-                  receiverId: data.receiverId,
-                  points: data.points,
-                  senderName: actor.displayName,
-                  coreValue: data.coreValue,
-                },
-              }))
+              userId,
+              type:
+                userId === data.receiverId ? 'kudo_received' : 'kudo_tagged',
+              payloadJson: {
+                kudoId: kudo.id,
+                senderId: actor.id,
+                receiverId: data.receiverId,
+                points: data.points,
+                senderName: actor.displayName,
+                coreValue: data.coreValue,
+              },
+            }))
           );
 
           return kudo;
@@ -335,9 +362,9 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
         createdAt: new Date().toISOString(),
       });
 
-      const realtimeTaggedUserIds = Array.from(new Set(data.taggedUserIds ?? [])).filter(
-        (userId) => userId !== actor.id && userId !== data.receiverId
-      );
+      const realtimeTaggedUserIds = Array.from(
+        new Set(data.taggedUserIds ?? [])
+      ).filter((userId) => userId !== actor.id && userId !== data.receiverId);
       await Promise.all(
         realtimeTaggedUserIds.map((userId) =>
           fastify.publishEvent({
@@ -365,17 +392,18 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
       });
 
       await Promise.all(
-        Array.from(new Set([actor.id, data.receiverId, ...realtimeTaggedUserIds])).map(
-          (userId) =>
-            fastify.publishEvent({
-              event: 'ai.summary.invalidate',
-              userId,
-              payload: {
-                monthKey,
-                kudoId: result.id,
-              },
-              createdAt: new Date().toISOString(),
-            })
+        Array.from(
+          new Set([actor.id, data.receiverId, ...realtimeTaggedUserIds])
+        ).map((userId) =>
+          fastify.publishEvent({
+            event: 'ai.summary.invalidate',
+            userId,
+            payload: {
+              monthKey,
+              kudoId: result.id,
+            },
+            createdAt: new Date().toISOString(),
+          })
         )
       );
 
@@ -490,7 +518,9 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
           createdAt: new Date().toISOString(),
         });
 
-        return reply.status(201).send({ reaction: inserted[0], toggled: 'added' });
+        return reply
+          .status(201)
+          .send({ reaction: inserted[0], toggled: 'added' });
       }
 
       const deleted = await db
@@ -543,11 +573,13 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
       const requestedMediaIds = parsed.data.mediaAssetIds?.length
         ? Array.from(new Set(parsed.data.mediaAssetIds))
         : parsed.data.mediaAssetId
-          ? [parsed.data.mediaAssetId]
-          : [];
+        ? [parsed.data.mediaAssetId]
+        : [];
 
       if (requestedMediaIds.length > 5) {
-        return reply.status(400).send({ error: 'Maximum 5 media files per comment' });
+        return reply
+          .status(400)
+          .send({ error: 'Maximum 5 media files per comment' });
       }
 
       let validMediaIds: string[] = [];

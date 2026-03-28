@@ -2,12 +2,7 @@ import crypto from 'node:crypto';
 import { and, desc, eq, gte, lt, or, sql } from 'drizzle-orm';
 import type { MonthlySummaryResponse } from '@org/shared';
 import { db } from '../db/client.js';
-import {
-  aiMonthlySummaries,
-  kudos,
-  redemptions,
-  users,
-} from '../db/schema.js';
+import { aiMonthlySummaries, kudos, redemptions, users } from '../db/schema.js';
 import { getEnv } from '../config/env.js';
 
 type SummaryContext = {
@@ -53,7 +48,17 @@ function fallbackSummary(context: SummaryContext) {
           .join(', ')
       : 'no repeated recognition patterns yet';
 
-  return `${context.displayName} sent ${sourceStats.kudosSent} kudos worth ${sourceStats.pointsGiven} points and received ${sourceStats.kudosReceived} kudos worth ${sourceStats.pointsReceived} points in ${context.monthKey}. The strongest themes were ${topValues}. The most-recognized teammates were ${colleagues}. ${sourceStats.rewardsRedeemed > 0 ? `They redeemed ${sourceStats.rewardsRedeemed} rewards.` : 'They did not redeem any rewards this month.'}`;
+  return `${context.displayName} sent ${sourceStats.kudosSent} kudos worth ${
+    sourceStats.pointsGiven
+  } points and received ${sourceStats.kudosReceived} kudos worth ${
+    sourceStats.pointsReceived
+  } points in ${
+    context.monthKey
+  }. The strongest themes were ${topValues}. The most-recognized teammates were ${colleagues}. ${
+    sourceStats.rewardsRedeemed > 0
+      ? `They redeemed ${sourceStats.rewardsRedeemed} rewards.`
+      : 'They did not redeem any rewards this month.'
+  }`;
 }
 
 async function generateOpenAiSummary(context: SummaryContext) {
@@ -133,7 +138,11 @@ async function buildSummaryContext(
       })
       .from(kudos)
       .where(
-        and(eq(kudos.senderId, userId), gte(kudos.createdAt, start), lt(kudos.createdAt, end))
+        and(
+          eq(kudos.senderId, userId),
+          gte(kudos.createdAt, start),
+          lt(kudos.createdAt, end)
+        )
       ),
     db
       .select({
@@ -173,7 +182,11 @@ async function buildSummaryContext(
       .from(kudos)
       .innerJoin(users, eq(kudos.receiverId, users.id))
       .where(
-        and(eq(kudos.senderId, userId), gte(kudos.createdAt, start), lt(kudos.createdAt, end))
+        and(
+          eq(kudos.senderId, userId),
+          gte(kudos.createdAt, start),
+          lt(kudos.createdAt, end)
+        )
       )
       .groupBy(users.id, users.displayName)
       .orderBy(desc(sql`count(*)`), users.displayName)
@@ -267,7 +280,10 @@ export async function getMonthlySummary(
       monthKey,
       contentHash,
       summary,
-      sourceStatsJson: context.sourceStats as unknown as Record<string, unknown>,
+      sourceStatsJson: context.sourceStats as unknown as Record<
+        string,
+        unknown
+      >,
     })
     .onConflictDoNothing()
     .returning();

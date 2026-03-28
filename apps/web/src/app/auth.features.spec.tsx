@@ -62,11 +62,13 @@ describe('auth features', () => {
   });
 
   it('redirects unauthenticated users from protected route to login', async () => {
-    const fetchMock = vi.fn(async (): Promise<MockResponse> => ({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: 'Unauthorized' }),
-    }));
+    const fetchMock = vi.fn(
+      async (): Promise<MockResponse> => ({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      })
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     const { findByText, queryByText } = renderAppAt('/');
@@ -75,11 +77,13 @@ describe('auth features', () => {
   });
 
   it('redirects authenticated users away from login to dashboard', async () => {
-    const fetchMock = vi.fn(async (): Promise<MockResponse> => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ user: authenticatedUser }),
-    }));
+    const fetchMock = vi.fn(
+      async (): Promise<MockResponse> => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ user: authenticatedUser }),
+      })
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     const { findByText } = renderAppAt('/login');
@@ -158,11 +162,13 @@ describe('auth features', () => {
   });
 
   it('requests /auth/me with no-store cache policy', async () => {
-    const fetchMock = vi.fn(async (): Promise<MockResponse> => ({
-      ok: false,
-      status: 401,
-      json: async () => ({ error: 'Unauthorized' }),
-    }));
+    const fetchMock = vi.fn(
+      async (): Promise<MockResponse> => ({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      })
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     render(
