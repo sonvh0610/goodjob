@@ -56,11 +56,9 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
         taggedUserIds.includes(actor.id) ||
         taggedUserIds.includes(data.receiverId)
       ) {
-        return reply
-          .status(400)
-          .send({
-            error: 'Tagged teammates cannot include sender or receiver',
-          });
+        return reply.status(400).send({
+          error: 'Tagged teammates cannot include sender or receiver',
+        });
       }
 
       const taggedUsers =
