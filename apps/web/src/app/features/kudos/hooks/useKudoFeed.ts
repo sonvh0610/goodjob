@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { wsUrl } from '../../../lib/api';
 import { uploadManyMedia } from '../../../lib/media';
+import { subscribeToRealtime } from '../../../lib/realtime';
 import { getUserFacingError } from '../../../lib/user-errors';
 import type { FeedItem, KudoMedia } from '@org/shared';
 import {
@@ -164,20 +164,20 @@ export function useKudoFeed() {
   }, []);
 
   useEffect(() => {
-    const socket = new WebSocket(wsUrl('/notifications/stream'));
-    socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data) as { event: string };
-      if (
-        payload.event === 'feed.new' ||
-        payload.event === 'feed.reaction' ||
-        payload.event === 'feed.comment'
-      ) {
-        void loadFeed(null);
-      }
-    };
-    return () => {
-      socket.close();
-    };
+    return subscribeToRealtime({
+      path: '/notifications/stream',
+      onFallback: () => loadFeed(null),
+      onMessage: (event) => {
+        const payload = JSON.parse(event.data) as { event: string };
+        if (
+          payload.event === 'feed.new' ||
+          payload.event === 'feed.reaction' ||
+          payload.event === 'feed.comment'
+        ) {
+          void loadFeed(null);
+        }
+      },
+    });
   }, []);
 
   return {

@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.toString() ?? '';
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL?.toString() ?? '';
 
 export function apiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
@@ -119,8 +120,9 @@ export async function apiRequest<T>(
 }
 
 export function wsUrl(path: string): string {
-  const baseUrl = API_BASE_URL
-    ? new URL(API_BASE_URL, window.location.origin)
+  const configuredBase = WS_BASE_URL || API_BASE_URL;
+  const baseUrl = configuredBase
+    ? new URL(configuredBase, window.location.origin)
     : new URL(window.location.origin);
   const url = new URL(baseUrl.toString());
   const basePath = baseUrl.pathname.endsWith('/')
@@ -131,4 +133,21 @@ export function wsUrl(path: string): string {
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   url.pathname = `${basePath}${normalizedPath}`.replace(/\/{2,}/g, '/');
   return url.toString();
+}
+
+export function shouldUseWebSocketTransport(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  if (WS_BASE_URL.trim().length > 0) {
+    return true;
+  }
+
+  if (!API_BASE_URL.startsWith('/')) {
+    return true;
+  }
+
+  const hostname = window.location.hostname.toLowerCase();
+  return !hostname.endsWith('.vercel.app');
 }

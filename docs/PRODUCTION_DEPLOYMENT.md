@@ -52,6 +52,7 @@ Set these in repository settings before enabling production CD:
    - `REDIS_URL`
    - `APP_BASE_URL` (example: `https://web-hoaison-vos-projects.vercel.app`)
    - `API_BASE_URL` (example: `https://web-hoaison-vos-projects.vercel.app/api`)
+   - `VITE_WS_BASE_URL` (optional, required for true realtime if your frontend proxy does not forward websocket upgrades)
    - `SESSION_COOKIE_NAME`
    - `SESSION_TTL_HOURS`
    - `JWT_SECRET`
@@ -76,7 +77,9 @@ The CD workflow runs this sequence on the server:
 5. `docker-compose --env-file .env.prod -f deploy/docker-compose.aws-nano.yml run --rm api node apps/api/dist/apps/api/src/app/db/migrate.js`
 6. `docker-compose --env-file .env.prod -f deploy/docker-compose.aws-nano.yml up -d api`
 7. `docker image prune -f`
-8. `npm exec nx run @org/web:build` with `VITE_API_BASE_URL=/api`, copy `apps/web/dist` into `.vercel/output/static`, add Vercel route `/api/* -> http://$PROD_SSH_HOST/*`, then `npx vercel deploy --prebuilt --prod --public --yes --token="$VERCEL_TOKEN"`
+8. `npm exec nx run @org/web:build` with `VITE_API_BASE_URL=/api`, optionally set `VITE_WS_BASE_URL` to a websocket-capable public API origin, copy `apps/web/dist` into `.vercel/output/static`, add Vercel route `/api/* -> http://$PROD_SSH_HOST/*`, then `npx vercel deploy --prebuilt --prod --public --yes --token="$VERCEL_TOKEN"`
+
+Note: the Vercel `/api/*` rewrite is suitable for HTTP requests, but websocket upgrades may not survive that hop. If `VITE_WS_BASE_URL` is not set, the web app will fall back to polling for notification-driven refreshes.
 
 ## Smoke Checks After Deploy
 

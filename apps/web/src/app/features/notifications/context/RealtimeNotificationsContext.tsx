@@ -9,7 +9,8 @@ import {
 } from 'react';
 import type { NotificationUnreadCountResponse } from '@org/shared';
 import { useAuth } from '../../../context/AuthContext';
-import { apiRequest, wsUrl } from '../../../lib/api';
+import { apiRequest } from '../../../lib/api';
+import { subscribeToRealtime } from '../../../lib/realtime';
 
 type RealtimeNotificationEvent = {
   event: string;
@@ -144,8 +145,10 @@ export function RealtimeNotificationsProvider({ children }: PropsWithChildren) {
       void Notification.requestPermission().catch(() => undefined);
     }
 
-    const socket = new WebSocket(wsUrl('/notifications/stream'));
-    socket.onmessage = (event) => {
+    return subscribeToRealtime({
+      path: '/notifications/stream',
+      onFallback: refreshUnreadCount,
+      onMessage: (event) => {
       const payload = JSON.parse(event.data) as RealtimeNotificationEvent;
       if (payload.event !== 'notification.new') {
         return;
@@ -172,11 +175,8 @@ export function RealtimeNotificationsProvider({ children }: PropsWithChildren) {
 
       void refreshUnreadCount();
       void notifyInBrowser(details);
-    };
-
-    return () => {
-      socket.close();
-    };
+      },
+    });
   }, [refreshUnreadCount, user]);
 
   const value = useMemo(

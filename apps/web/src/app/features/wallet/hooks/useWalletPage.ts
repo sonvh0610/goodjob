@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { wsUrl } from '../../../lib/api';
 import { getUserFacingError } from '../../../lib/user-errors';
+import { subscribeToRealtime } from '../../../lib/realtime';
 import {
   fetchWallet,
   fetchWalletTransactions,
@@ -68,17 +68,22 @@ export function useWalletPage() {
   }, [loadWalletPageData]);
 
   useEffect(() => {
-    const socket = new WebSocket(wsUrl('/notifications/stream'));
-    socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data) as { event: string };
-      if (payload.event === 'wallet.points_received' || payload.event === 'feed.new') {
-        void loadWalletPageData();
-      }
-      if (payload.event === 'notification.new') {
-        void loadWalletPageData();
-      }
-    };
-    return () => socket.close();
+    return subscribeToRealtime({
+      path: '/notifications/stream',
+      onFallback: loadWalletPageData,
+      onMessage: (event) => {
+        const payload = JSON.parse(event.data) as { event: string };
+        if (
+          payload.event === 'wallet.points_received' ||
+          payload.event === 'feed.new'
+        ) {
+          void loadWalletPageData();
+        }
+        if (payload.event === 'notification.new') {
+          void loadWalletPageData();
+        }
+      },
+    });
   }, [loadWalletPageData]);
 
   const spentRatio = useMemo(() => {

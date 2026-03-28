@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { NotificationItem, NotificationsResponse } from '@org/shared';
-import { apiRequest, wsUrl } from '../lib/api';
+import { apiRequest } from '../lib/api';
+import { subscribeToRealtime } from '../lib/realtime';
 import { getUserFacingError } from '../lib/user-errors';
 import { useRealtimeNotifications } from '../features/notifications/context/RealtimeNotificationsContext';
 
@@ -127,18 +128,18 @@ export default function Notifications() {
   }, []);
 
   useEffect(() => {
-    const socket = new WebSocket(wsUrl('/notifications/stream'));
-    socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data) as {
-        event: string;
-      };
-      if (payload.event === 'notification.new') {
-        void loadNotifications(null);
-      }
-    };
-    return () => {
-      socket.close();
-    };
+    return subscribeToRealtime({
+      path: '/notifications/stream',
+      onFallback: () => loadNotifications(null),
+      onMessage: (event) => {
+        const payload = JSON.parse(event.data) as {
+          event: string;
+        };
+        if (payload.event === 'notification.new') {
+          void loadNotifications(null);
+        }
+      },
+    });
   }, []);
 
   const markAllRead = async () => {

@@ -84,10 +84,15 @@ API_BASE_URL=https://<your-ngrok-domain>
 SLACK_OAUTH_REDIRECT_URI=https://<your-ngrok-domain>/auth/oauth/slack/callback
 GOOGLE_OAUTH_REDIRECT_URI=https://<your-ngrok-domain>/auth/oauth/google/callback
 VITE_API_BASE_URL=
+VITE_WS_BASE_URL=
 VITE_DEV_API_PROXY_TARGET=http://localhost:3000
 ```
 
 This keeps OAuth callback + session cookie on the same origin, avoiding browser third-party cookie blocking during local development.
+
+If your deployed frontend reaches the API through a proxy or rewrite that does not preserve
+websocket upgrades, set `VITE_WS_BASE_URL` to a websocket-capable public origin for the API.
+Without that override, the web app falls back to polling for notification/feed/wallet refreshes.
 
 ## Nx tasks
 
