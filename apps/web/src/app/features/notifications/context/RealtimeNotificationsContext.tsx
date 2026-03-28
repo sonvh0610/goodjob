@@ -4,10 +4,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from 'react';
-import type { NotificationUnreadCountResponse } from '@org/shared';
+import type {
+  NotificationItem,
+  NotificationsResponse,
+  NotificationUnreadCountResponse,
+} from '@org/shared';
 import { useAuth } from '../../../context/AuthContext';
 import { apiRequest } from '../../../lib/api';
 import { subscribeToRealtime } from '../../../lib/realtime';
@@ -112,10 +117,37 @@ type NotificationToast = {
   targetPath: string;
 };
 
+function toNotificationPayload(
+  item: NotificationItem
+): Record<string, unknown> {
+  return {
+    ...item.payloadJson,
+    type: item.type,
+  };
+}
+
 export function RealtimeNotificationsProvider({ children }: PropsWithChildren) {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [toasts, setToasts] = useState<NotificationToast[]>([]);
+  const seenNotificationIdsRef = useRef<Set<string>>(new Set());
+  const hasSeededNotificationsRef = useRef(false);
+
+  const pushToast = useCallback((payload: Record<string, unknown>) => {
+    const content = buildBrowserNotification(payload);
+    const targetPath = getNotificationTargetPath(payload);
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const toast: NotificationToast = {
+      id,
+      title: content.title,
+      body: content.body,
+      targetPath,
+    };
+    setToasts((prev) => [toast, ...prev].slice(0, 4));
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((item) => item.id !== id));
+    }, 5000);
+  }, []);
 
   const refreshUnreadCount = useCallback(async () => {
     if (!user) {
@@ -133,9 +165,66 @@ export function RealtimeNotificationsProvider({ children }: PropsWithChildren) {
     }
   }, [user]);
 
+  const syncLatestNotifications = useCallback(
+    async (mode: 'seed' | 'notify') => {
+      if (!user) {
+        seenNotificationIdsRef.current.clear();
+        hasSeededNotificationsRef.current = false;
+        return;
+      }
+
+      try {
+        const result = await apiRequest<NotificationsResponse>(
+          '/notifications?limit=10'
+        );
+        const nextSeenIds = new Set(seenNotificationIdsRef.current);
+        const newlyDiscovered = result.items.filter(
+          (item) => !nextSeenIds.has(item.id) && item.readAt === null
+        );
+
+        result.items.forEach((item) => {
+          nextSeenIds.add(item.id);
+        });
+
+        if (nextSeenIds.size > 40) {
+          const trimmed = result.items.map((item) => item.id);
+          seenNotificationIdsRef.current = new Set(trimmed);
+        } else {
+          seenNotificationIdsRef.current = nextSeenIds;
+        }
+
+        if (mode === 'notify' && hasSeededNotificationsRef.current) {
+          newlyDiscovered
+            .slice()
+            .reverse()
+            .forEach((item) => {
+              const payload = toNotificationPayload(item);
+              pushToast(payload);
+              void notifyInBrowser(payload);
+            });
+        }
+
+        hasSeededNotificationsRef.current = true;
+      } catch {
+        // Ignore fallback polling errors to avoid breaking app shell behavior.
+      }
+    },
+    [pushToast, user]
+  );
+
   useEffect(() => {
     void refreshUnreadCount();
   }, [refreshUnreadCount]);
+
+  useEffect(() => {
+    if (!user) {
+      seenNotificationIdsRef.current.clear();
+      hasSeededNotificationsRef.current = false;
+      return;
+    }
+
+    void syncLatestNotifications('seed');
+  }, [syncLatestNotifications, user]);
 
   useEffect(() => {
     if (!user) {
@@ -148,7 +237,12 @@ export function RealtimeNotificationsProvider({ children }: PropsWithChildren) {
 
     return subscribeToRealtime({
       path: '/notifications/stream',
-      onFallback: refreshUnreadCount,
+      onFallback: async () => {
+        await Promise.all([
+          refreshUnreadCount(),
+          syncLatestNotifications('notify'),
+        ]);
+      },
       onMessage: (event) => {
         const payload = JSON.parse(event.data) as RealtimeNotificationEvent;
         if (payload.event !== 'notification.new') {
@@ -160,25 +254,12 @@ export function RealtimeNotificationsProvider({ children }: PropsWithChildren) {
           return;
         }
 
-        const content = buildBrowserNotification(details);
-        const targetPath = getNotificationTargetPath(details);
-        const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const toast: NotificationToast = {
-          id,
-          title: content.title,
-          body: content.body,
-          targetPath,
-        };
-        setToasts((prev) => [toast, ...prev].slice(0, 4));
-        window.setTimeout(() => {
-          setToasts((prev) => prev.filter((item) => item.id !== id));
-        }, 5000);
-
+        pushToast(details);
         void refreshUnreadCount();
         void notifyInBrowser(details);
       },
     });
-  }, [refreshUnreadCount, user]);
+  }, [pushToast, refreshUnreadCount, syncLatestNotifications, user]);
 
   const value = useMemo(
     () => ({
