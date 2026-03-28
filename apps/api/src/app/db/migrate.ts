@@ -18,7 +18,7 @@ async function run() {
     path.resolve(__dirname, 'migrations'),
     // Nx esbuild assets may be emitted under dist/src/... while JS lives in
     // dist/apps/api/src/..., so keep a fallback for production bundles.
-    path.resolve(__dirname, '../../../../src/app/db/migrations'),
+    path.resolve(__dirname, '../../../../../src/app/db/migrations'),
   ];
 
   let migrationsDir: string | null = null;

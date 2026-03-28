@@ -11,17 +11,16 @@ This repository now includes CI and CD workflows:
    - `nx format:check`
    - `nx affected --targets=typecheck,test,build`
 2. CD runs on `main` pushes (or manually):
-   - builds API and Web images
-   - pushes images to GHCR
-   - deploys via SSH to production host
-   - runs DB migrations before restarting services
+   - builds API image
+   - pushes API image to GHCR
+   - deploys API/Postgres/Redis on EC2 over SSH
+   - runs DB migrations before restarting API
+   - deploys web to Vercel production
 
 ## New Production Artifacts
 
 - `Dockerfile.api`: builds and runs Fastify API (`node apps/api/dist/main.js`).
-- `Dockerfile.web`: builds Vite web app and serves through Nginx.
-- `deploy/nginx/web.conf`: SPA serving + API/WebSocket reverse proxy.
-- `deploy/docker-compose.prod.yml`: production compose stack using GHCR images.
+- `deploy/docker-compose.aws-nano.yml`: EC2 nano compose stack for `api + postgres + redis`.
 
 ## Required GitHub Secrets
 
@@ -34,12 +33,18 @@ Set these in repository settings before enabling production CD:
 - `PROD_DEPLOY_PATH`: absolute path on server where this repo is checked out.
 - `GHCR_USERNAME`: GHCR username for pull access from server.
 - `GHCR_READ_TOKEN`: PAT with `read:packages` scope.
+- `VERCEL_TOKEN`: Vercel token with deploy permission.
+- `VERCEL_ORG_ID`: Vercel org/team ID.
+- `VERCEL_PROJECT_ID`: Vercel project ID for `apps/web`.
 
 ## First-Time Server Setup
 
 1. Install Docker + Docker Compose plugin on production host.
 2. Clone this repository at `PROD_DEPLOY_PATH` on the host.
 3. Create `PROD_DEPLOY_PATH/.env.prod` with production values:
+   - `POSTGRES_USER`
+   - `POSTGRES_PASSWORD`
+   - `POSTGRES_DB`
    - `NODE_ENV=production`
    - `HOST=0.0.0.0`
    - `PORT=3000`
@@ -58,7 +63,7 @@ Set these in repository settings before enabling production CD:
    - OAuth secrets/redirect URIs as needed
    - `RATE_LIMIT_MAX`
    - `RATE_LIMIT_WINDOW`
-4. Make sure Postgres and Redis are reachable from the host (managed services or private network).
+4. Ensure `docker-compose` (or `docker compose`) is available on the host.
 
 ## Deployment Flow Executed by CD
 
@@ -66,17 +71,19 @@ The CD workflow runs this sequence on the server:
 
 1. `git fetch` + `git checkout main` + `git pull --ff-only`
 2. `docker login ghcr.io`
-3. `docker compose -f deploy/docker-compose.prod.yml pull`
-4. `docker compose -f deploy/docker-compose.prod.yml run --rm api node apps/api/dist/apps/api/src/app/db/migrate.js`
-5. `docker compose -f deploy/docker-compose.prod.yml up -d --remove-orphans`
-6. `docker image prune -f`
+3. `docker-compose --env-file .env.prod -f deploy/docker-compose.aws-nano.yml pull api`
+4. `docker-compose --env-file .env.prod -f deploy/docker-compose.aws-nano.yml up -d postgres redis`
+5. `docker-compose --env-file .env.prod -f deploy/docker-compose.aws-nano.yml run --rm api node apps/api/dist/apps/api/src/app/db/migrate.js`
+6. `docker-compose --env-file .env.prod -f deploy/docker-compose.aws-nano.yml up -d api`
+7. `docker image prune -f`
+8. `npx vercel deploy --prod --yes --token="$VERCEL_TOKEN"` from `apps/web`
 
 ## Smoke Checks After Deploy
 
 Run on production host:
 
 ```bash
-docker compose -f deploy/docker-compose.prod.yml ps
+docker-compose -f deploy/docker-compose.aws-nano.yml ps
 curl -f http://localhost/healthz
 ```
 
@@ -95,8 +102,8 @@ To roll back to previous image tag:
 2. Re-run:
 
 ```bash
-docker compose -f deploy/docker-compose.prod.yml pull
-docker compose -f deploy/docker-compose.prod.yml up -d --remove-orphans
+docker-compose -f deploy/docker-compose.aws-nano.yml pull api
+docker-compose -f deploy/docker-compose.aws-nano.yml up -d api
 ```
 
 If schema changed, use your DB rollback policy before or after image rollback depending on migration compatibility.
