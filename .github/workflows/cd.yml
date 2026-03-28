@@ -148,4 +148,16 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           npm exec nx run @org/web:build
-          npx vercel@latest deploy apps/web/dist --prod --public --yes --token="$VERCEL_TOKEN"
+          rm -rf .vercel/output
+          mkdir -p .vercel/output/static
+          cp -R apps/web/dist/. .vercel/output/static/
+          cat > .vercel/output/config.json <<'EOF'
+          {
+            "version": 3,
+            "routes": [
+              { "handle": "filesystem" },
+              { "src": "/.*", "dest": "/index.html" }
+            ]
+          }
+          EOF
+          npx vercel@latest deploy --prebuilt --prod --public --yes --token="$VERCEL_TOKEN"
