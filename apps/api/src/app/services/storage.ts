@@ -1,6 +1,12 @@
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import {
+  CreateBucketCommand,
+  GetObjectCommand,
+  HeadBucketCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getEnv } from '../config/env.js';
 
@@ -16,6 +22,37 @@ const s3Client = new S3Client({
   },
 });
 
+let ensureBucketPromise: Promise<void> | null = null;
+
+async function ensureBucketExists() {
+  try {
+    await s3Client.send(
+      new HeadBucketCommand({
+        Bucket: env.S3_BUCKET,
+      })
+    );
+    return;
+  } catch {
+    // Continue to create when bucket does not exist or is not yet reachable.
+  }
+
+  await s3Client.send(
+    new CreateBucketCommand({
+      Bucket: env.S3_BUCKET,
+    })
+  );
+}
+
+async function ensureBucketReady() {
+  if (!ensureBucketPromise) {
+    ensureBucketPromise = ensureBucketExists().catch((error) => {
+      ensureBucketPromise = null;
+      throw error;
+    });
+  }
+  await ensureBucketPromise;
+}
+
 export function makeStorageKey(userId: string, fileName: string) {
   const extension = path.extname(fileName || '').slice(0, 16);
   return `uploads/${userId}/${Date.now()}-${randomUUID()}${extension}`;
@@ -25,6 +62,8 @@ export async function createPresignedUploadUrl(input: {
   key: string;
   mimeType: string;
 }) {
+  await ensureBucketReady();
+
   const cmd = new PutObjectCommand({
     Bucket: env.S3_BUCKET,
     Key: input.key,
@@ -34,6 +73,15 @@ export async function createPresignedUploadUrl(input: {
     expiresIn: 900,
   });
   return url;
+}
+
+export async function createPresignedReadUrl(input: { key: string }) {
+  await ensureBucketReady();
+  const cmd = new GetObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: input.key,
+  });
+  return getSignedUrl(s3Client, cmd, { expiresIn: 3600 });
 }
 
 export function makeObjectPublicUrl(key: string): string {

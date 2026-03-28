@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest, wsUrl } from '../lib/api';
+import { getUserFacingError } from '../lib/user-errors';
 
 interface NotificationItem {
   id: string;
@@ -19,9 +20,10 @@ export default function Notifications() {
       setItems(result.items);
     } catch (requestError) {
       setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Cannot load notifications'
+        getUserFacingError(requestError, {
+          context: 'notifications-load',
+          fallback: 'Unable to load notifications right now. Please try again.',
+        })
       );
     }
   };
@@ -53,9 +55,9 @@ export default function Notifications() {
   return (
     <div className="mx-auto max-w-3xl p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Notifications</h1>
+        <h1 className="text-2xl font-bold text-on-surface">Notifications</h1>
         <button
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+          className="rounded-md border border-secondary-fixed/40 bg-secondary px-3 py-2 text-sm text-on-secondary hover:bg-secondary-fixed transition-colors"
           onClick={() => void markAllRead()}
           type="button"
         >
@@ -68,14 +70,16 @@ export default function Notifications() {
           <div
             key={item.id}
             className={`rounded-lg border p-4 ${
-              item.readAt ? 'border-slate-200 bg-white' : 'border-blue-200 bg-blue-50'
+              item.readAt
+                ? 'border-surface-container bg-surface-container-lowest'
+                : 'border-primary/30 bg-primary-container/30'
             }`}
           >
-            <p className="text-sm font-semibold text-slate-900">{item.type}</p>
-            <pre className="mt-2 overflow-auto text-xs text-slate-600">
+            <p className="text-sm font-semibold text-on-surface">{item.type}</p>
+            <pre className="mt-2 overflow-auto text-xs text-on-surface-variant">
               {JSON.stringify(item.payloadJson, null, 2)}
             </pre>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-on-surface-variant">
               {new Date(item.createdAt).toLocaleString()}
             </p>
           </div>

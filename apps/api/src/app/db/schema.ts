@@ -192,21 +192,54 @@ export const kudos = pgTable(
   })
 );
 
-export const kudoTaggedUsers = pgTable(
-  'kudo_tagged_users',
+export const kudoMediaAssets = pgTable(
+  'kudo_media_assets',
   {
     kudoId: uuid('kudo_id')
       .notNull()
       .references(() => kudos.id, { onDelete: 'cascade' }),
-    userId: uuid('user_id')
+    mediaAssetId: uuid('media_asset_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => mediaAssets.id, { onDelete: 'restrict' }),
+    position: integer('position').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
   (table) => ({
-    pk: unique('kudo_tagged_users_unique').on(table.kudoId, table.userId),
+    uniqueKudoMedia: unique('kudo_media_assets_unique').on(
+      table.kudoId,
+      table.mediaAssetId
+    ),
+    kudoPositionIdx: index('kudo_media_assets_kudo_position_idx').on(
+      table.kudoId,
+      table.position
+    ),
+  })
+);
+
+export const monthlyGivingWallets = pgTable(
+  'monthly_giving_wallets',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    monthKey: varchar('month_key', { length: 7 }).notNull(),
+    spentPoints: integer('spent_points').notNull().default(0),
+    limitPoints: integer('limit_points').notNull().default(200),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    pk: unique('monthly_giving_wallets_user_month_unique').on(
+      table.userId,
+      table.monthKey
+    ),
+    userMonthIdx: index('monthly_giving_wallets_user_month_idx').on(
+      table.userId,
+      table.monthKey
+    ),
   })
 );
 
@@ -274,6 +307,32 @@ export const comments = pgTable('comments', {
     .defaultNow()
     .notNull(),
 });
+
+export const commentMediaAssets = pgTable(
+  'comment_media_assets',
+  {
+    commentId: uuid('comment_id')
+      .notNull()
+      .references(() => comments.id, { onDelete: 'cascade' }),
+    mediaAssetId: uuid('media_asset_id')
+      .notNull()
+      .references(() => mediaAssets.id, { onDelete: 'restrict' }),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    uniqueCommentMedia: unique('comment_media_assets_unique').on(
+      table.commentId,
+      table.mediaAssetId
+    ),
+    commentPositionIdx: index('comment_media_assets_comment_position_idx').on(
+      table.commentId,
+      table.position
+    ),
+  })
+);
 
 export const rewards = pgTable(
   'rewards',

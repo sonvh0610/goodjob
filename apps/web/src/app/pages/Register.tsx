@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { AppIcon } from '../components/ui/AppIcon';
+import { getUserFacingError } from '../lib/user-errors';
 
 export function Register() {
   const [error, setError] = useState<string | null>(null);
@@ -19,9 +20,10 @@ export function Register() {
       window.location.href = data.url;
     } catch (requestError) {
       setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Cannot start oauth login'
+        getUserFacingError(requestError, {
+          context: 'auth-oauth',
+          fallback: 'Unable to start sign-in right now. Please try again.',
+        })
       );
     } finally {
       setLoadingProvider(null);
@@ -53,7 +55,7 @@ export function Register() {
             </p>
             <div className="mt-5 space-y-3">
               <button
-                className="flex w-full items-center justify-between rounded-2xl border border-surface-container px-4 py-3 text-sm font-semibold text-on-surface transition hover:-translate-y-0.5 hover:shadow"
+                className="flex w-full items-center justify-between rounded-2xl border border-secondary-fixed/40 bg-secondary px-4 py-3 text-sm font-semibold text-on-secondary transition hover:-translate-y-0.5 hover:bg-secondary-fixed hover:shadow"
                 disabled={loadingProvider !== null}
                 onClick={() => void startOauth('google')}
                 type="button"
@@ -69,7 +71,7 @@ export function Register() {
                 </AppIcon>
               </button>
               <button
-                className="flex w-full items-center justify-between rounded-2xl border border-surface-container px-4 py-3 text-sm font-semibold text-on-surface transition hover:-translate-y-0.5 hover:shadow"
+                className="flex w-full items-center justify-between rounded-2xl border border-secondary-fixed/40 bg-secondary px-4 py-3 text-sm font-semibold text-on-secondary transition hover:-translate-y-0.5 hover:bg-secondary-fixed hover:shadow"
                 disabled={loadingProvider !== null}
                 onClick={() => void startOauth('facebook')}
                 type="button"
@@ -85,7 +87,7 @@ export function Register() {
                 </AppIcon>
               </button>
               <button
-                className="flex w-full items-center justify-between rounded-2xl border border-surface-container px-4 py-3 text-sm font-semibold text-on-surface transition hover:-translate-y-0.5 hover:shadow"
+                className="flex w-full items-center justify-between rounded-2xl border border-secondary-fixed/40 bg-secondary px-4 py-3 text-sm font-semibold text-on-secondary transition hover:-translate-y-0.5 hover:bg-secondary-fixed hover:shadow"
                 disabled={loadingProvider !== null}
                 onClick={() => void startOauth('slack')}
                 type="button"

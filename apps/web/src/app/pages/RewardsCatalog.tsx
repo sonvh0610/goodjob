@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../lib/api';
+import { getUserFacingError } from '../lib/user-errors';
 
 interface RewardItem {
   id: string;
@@ -20,7 +21,10 @@ export default function RewardsCatalog() {
       setItems(result.items);
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Cannot load rewards'
+        getUserFacingError(requestError, {
+          context: 'rewards-load',
+          fallback: 'Unable to load rewards right now. Please try again.',
+        })
       );
     }
   };
@@ -43,7 +47,10 @@ export default function RewardsCatalog() {
       await loadRewards();
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Redeem failed'
+        getUserFacingError(requestError, {
+          context: 'reward-redeem',
+          fallback: 'Unable to redeem this reward right now. Please try again.',
+        })
       );
     } finally {
       setRedeemingId(null);
@@ -52,22 +59,22 @@ export default function RewardsCatalog() {
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-bold text-slate-900">Rewards</h1>
+      <h1 className="text-2xl font-bold text-on-surface">Rewards</h1>
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
       <div className="mt-6 space-y-3">
         {items.map((item) => (
           <article
-            className="flex items-center justify-between rounded-lg bg-white p-4 shadow-sm"
+            className="flex items-center justify-between rounded-lg bg-surface-container-lowest p-4 shadow-sm"
             key={item.id}
           >
             <div>
-              <p className="font-semibold text-slate-900">{item.name}</p>
-              <p className="text-sm text-slate-600">
+              <p className="font-semibold text-on-surface">{item.name}</p>
+              <p className="text-sm text-on-surface-variant">
                 {item.costPoints} points • stock: {item.stock}
               </p>
             </div>
             <button
-              className="rounded-md bg-blue-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+              className="rounded-md bg-primary px-3 py-2 text-sm text-on-primary hover:bg-primary-dim transition-colors disabled:opacity-50"
               disabled={item.stock <= 0 || redeemingId === item.id}
               onClick={() => void redeem(item.id)}
               type="button"

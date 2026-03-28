@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { apiRequest } from '../lib/api';
 import { GoodJobLogo } from '../components/ui/GoodJobLogo';
+import { getUserFacingError } from '../lib/user-errors';
 
 export function Login() {
   const [error, setError] = useState<string | null>(null);
@@ -18,9 +19,10 @@ export function Login() {
       window.location.href = data.url;
     } catch (requestError) {
       setError(
-        requestError instanceof Error
-          ? requestError.message
-          : 'Cannot start oauth login'
+        getUserFacingError(requestError, {
+          context: 'auth-oauth',
+          fallback: 'Unable to start sign-in right now. Please try again.',
+        })
       );
     } finally {
       setLoadingProvider(null);
@@ -52,7 +54,7 @@ export function Login() {
             </p>
             <div className="mt-5 space-y-3">
               <button
-                className="flex w-full cursor-pointer items-center justify-between rounded-2xl border border-[#DADCE0] bg-white px-4 py-3 text-sm font-semibold text-[#3C4043] shadow-sm transition hover:-translate-y-0.5 hover:shadow disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-between rounded-2xl border border-secondary-fixed/40 bg-secondary px-4 py-3 text-sm font-semibold text-on-secondary shadow-sm transition hover:-translate-y-0.5 hover:bg-secondary-fixed hover:shadow disabled:opacity-60"
                 disabled={loadingProvider !== null}
                 onClick={() => void startOauth('google')}
                 type="button"
@@ -69,7 +71,7 @@ export function Login() {
                 <span aria-hidden="true">→</span>
               </button>
               <button
-                className="flex w-full cursor-pointer items-center justify-between rounded-2xl border border-[#4A154B]/30 bg-[#4A154B] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#3F1140] hover:shadow disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex w-full items-center justify-between rounded-2xl border border-secondary-fixed/40 bg-secondary px-4 py-3 text-sm font-semibold text-on-secondary shadow-sm transition hover:-translate-y-0.5 hover:bg-secondary-fixed hover:shadow disabled:opacity-60"
                 disabled={loadingProvider !== null}
                 onClick={() => void startOauth('slack')}
                 type="button"

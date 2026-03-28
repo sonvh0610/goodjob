@@ -14,7 +14,7 @@ export default function AdminOverview() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border-variant border-2 text-on-surface-variant font-semibold hover:bg-surface-container-low transition-all">
+              <button className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-secondary-fixed/40 bg-secondary text-on-secondary font-semibold hover:bg-secondary-fixed transition-all">
                 <AppIcon
                   className="material-symbols-outlined text-[20px]"
                   data-icon="download"
@@ -23,7 +23,7 @@ export default function AdminOverview() {
                 </AppIcon>
                 Export PDF
               </button>
-              <button className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-br from-violet-600 to-indigo-500 text-white font-semibold shadow-lg shadow-violet-200 hover:scale-[1.02] active:scale-95 transition-all">
+              <button className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-on-primary font-semibold shadow-lg shadow-primary/30 hover:bg-primary-dim hover:scale-[1.02] active:scale-95 transition-all">
                 <AppIcon
                   className="material-symbols-outlined text-[20px]"
                   data-icon="add"
@@ -89,39 +89,39 @@ export default function AdminOverview() {
                 Most Used Core Values
               </p>
               <div className="flex flex-wrap gap-2">
-                <div className="flex items-center gap-2 px-4 py-2 bg-violet-50 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-violet-600"></span>
-                  <span className="text-sm font-bold text-violet-700">
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary-container/40 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  <span className="text-sm font-bold text-primary">
                     Teamwork
                   </span>
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-xs font-medium text-on-surface-variant">
                     840
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                  <span className="text-sm font-bold text-emerald-700">
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary-container/30 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  <span className="text-sm font-bold text-primary">
                     Innovation
                   </span>
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-xs font-medium text-on-surface-variant">
                     612
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-amber-600"></span>
-                  <span className="text-sm font-bold text-amber-700">
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary-container/25 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  <span className="text-sm font-bold text-primary">
                     Integrity
                   </span>
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-xs font-medium text-on-surface-variant">
                     429
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-rose-600"></span>
-                  <span className="text-sm font-bold text-rose-700">
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary-container/20 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  <span className="text-sm font-bold text-primary">
                     Excellence
                   </span>
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-xs font-medium text-on-surface-variant">
                     388
                   </span>
                 </div>
@@ -140,7 +140,7 @@ export default function AdminOverview() {
                     Daily kudos interaction for current month
                   </p>
                 </div>
-                <select className="bg-white/50 border-none rounded-full px-4 text-sm font-semibold focus:ring-violet-200">
+                <select className="bg-white/50 border-none rounded-full px-4 text-sm font-semibold focus:ring-primary/30">
                   <option>Last 30 Days</option>
                   <option>Last 3 Months</option>
                 </select>
@@ -277,7 +277,7 @@ export default function AdminOverview() {
                   <tr className="hover:bg-surface-container-lowest transition-all">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center font-bold text-xs text-violet-600">
+                        <div className="w-8 h-8 rounded-full bg-primary-container/40 flex items-center justify-center font-bold text-xs text-primary">
                           JB
                         </div>
                         <span className="font-semibold text-sm">
@@ -288,7 +288,7 @@ export default function AdminOverview() {
                     <td className="px-6 py-4 text-sm font-medium">
                       Starbucks \$25 Gift Card
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold text-violet-600">
+                    <td className="px-6 py-4 text-sm font-bold text-primary">
                       2,500 pts
                     </td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">
@@ -303,7 +303,7 @@ export default function AdminOverview() {
                   <tr className="hover:bg-surface-container-lowest transition-all">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-xs text-indigo-600">
+                        <div className="w-8 h-8 rounded-full bg-secondary-container/20 flex items-center justify-center font-bold text-xs text-secondary">
                           AL
                         </div>
                         <span className="font-semibold text-sm">Anita Lee</span>
@@ -312,7 +312,7 @@ export default function AdminOverview() {
                     <td className="px-6 py-4 text-sm font-medium">
                       Extra Day Off
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold text-violet-600">
+                    <td className="px-6 py-4 text-sm font-bold text-primary">
                       10,000 pts
                     </td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">
@@ -327,7 +327,7 @@ export default function AdminOverview() {
                   <tr className="hover:bg-surface-container-lowest transition-all">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center font-bold text-xs text-rose-600">
+                        <div className="w-8 h-8 rounded-full bg-secondary-container/25 flex items-center justify-center font-bold text-xs text-secondary">
                           TW
                         </div>
                         <span className="font-semibold text-sm">
@@ -338,7 +338,7 @@ export default function AdminOverview() {
                     <td className="px-6 py-4 text-sm font-medium">
                       Noise Cancelling Headphones
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold text-violet-600">
+                    <td className="px-6 py-4 text-sm font-bold text-primary">
                       15,000 pts
                     </td>
                     <td className="px-6 py-4 text-sm text-on-surface-variant">
@@ -361,16 +361,16 @@ export default function AdminOverview() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gradient-to-br from-indigo-900 to-violet-900 rounded-3xl p-8 text-white relative overflow-hidden group">
+            <div className="bg-gradient-to-br from-primary to-primary-dim rounded-3xl p-8 text-on-primary relative overflow-hidden group">
               <div className="relative z-10">
                 <h4 className="text-2xl font-headline font-bold mb-2">
                   Manage Rewards Store
                 </h4>
-                <p className="text-indigo-200 mb-6 max-w-xs">
+                <p className="text-primary-container mb-6 max-w-xs">
                   Update your catalog, change pricing, and add new celebratory
                   items.
                 </p>
-                <button className="px-6 py-3 bg-white text-indigo-900 font-bold rounded-full hover:bg-secondary-container transition-all flex items-center gap-2">
+                <button className="px-6 py-3 bg-primary text-on-primary font-bold rounded-full hover:bg-primary-dim transition-all flex items-center gap-2">
                   Go to Store Management
                   <AppIcon
                     className="material-symbols-outlined"
@@ -402,7 +402,7 @@ export default function AdminOverview() {
                   <div className="flex items-center justify-between p-3 bg-white/50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <AppIcon
-                        className="material-symbols-outlined text-amber-500"
+                        className="material-symbols-outlined text-primary"
                         data-icon="cake"
                       >
                         cake
@@ -418,7 +418,7 @@ export default function AdminOverview() {
                   <div className="flex items-center justify-between p-3 bg-white/50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <AppIcon
-                        className="material-symbols-outlined text-violet-500"
+                        className="material-symbols-outlined text-primary"
                         data-icon="work_history"
                       >
                         work_history

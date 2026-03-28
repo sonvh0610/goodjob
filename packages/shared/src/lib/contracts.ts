@@ -13,18 +13,49 @@ export const createKudoBodySchema = z.object({
   receiverId: uuidSchema,
   points: z.number().int().min(10).max(50),
   description: z.string().min(5).max(2000),
-  coreValue: z.string().min(2).max(60),
+  mediaAssetIds: z.array(uuidSchema).max(5).optional(),
+  // backward-compatible legacy field
   mediaAssetId: uuidSchema.optional(),
-  taggedUserIds: z.array(uuidSchema).max(20).default([]),
+}).superRefine((value, ctx) => {
+  if (value.mediaAssetIds && value.mediaAssetIds.length > 5) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Maximum 5 media files per kudo',
+      path: ['mediaAssetIds'],
+    });
+  }
 });
 
 export const createReactionBodySchema = z.object({
   emoji: z.string().min(1).max(16),
 });
 
-export const createCommentBodySchema = z.object({
-  text: z.string().min(1).max(2000),
-  mediaAssetId: uuidSchema.optional(),
+export const createCommentBodySchema = z
+  .object({
+    text: z.string().min(1).max(2000).optional(),
+    mediaAssetIds: z.array(uuidSchema).max(5).optional(),
+    // backward-compatible legacy field
+    mediaAssetId: uuidSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.text && !value.mediaAssetId && !value.mediaAssetIds?.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Comment requires text or media',
+      });
+    }
+    if (value.mediaAssetIds && value.mediaAssetIds.length > 5) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Maximum 5 media files per comment',
+        path: ['mediaAssetIds'],
+      });
+    }
+  });
+
+export const listUsersQuerySchema = z.object({
+  q: z.string().min(1).max(80).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export const redeemRewardBodySchema = z.object({
@@ -52,6 +83,7 @@ export type UploadPresignBody = z.infer<typeof uploadPresignBodySchema>;
 export type CreateKudoBody = z.infer<typeof createKudoBodySchema>;
 export type CreateReactionBody = z.infer<typeof createReactionBodySchema>;
 export type CreateCommentBody = z.infer<typeof createCommentBodySchema>;
+export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;
 export type RedeemRewardBody = z.infer<typeof redeemRewardBodySchema>;
 export type CreateRewardBody = z.infer<typeof createRewardBodySchema>;
 

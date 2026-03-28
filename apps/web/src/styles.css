@@ -4,9 +4,52 @@
   font-family: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif;
 }
 
+@theme {
+  --font-headline: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', sans-serif;
+
+  --color-primary: #001a4d;
+  --color-primary-dim: #00307d;
+  --color-on-primary: #f6f9ff;
+  --color-primary-container: #dce8ff;
+  --color-on-primary-container: #001235;
+
+  --color-secondary: #2f3338;
+  --color-secondary-fixed: #454a52;
+  --color-on-secondary: #f7f8fa;
+  --color-secondary-container: #2f3338;
+  --color-on-secondary-container: #f7f8fa;
+
+  --color-tertiary: #0d9488;
+  --color-tertiary-container: #ccfbf1;
+  --color-on-tertiary-container: #052f2f;
+
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f7;
+  --color-surface-container: #e6eaf0;
+  --color-surface-container-high: #d9dee8;
+  --color-on-surface: #111827;
+  --color-on-surface-variant: #4b5563;
+  --color-on-background: #111827;
+  --color-border-variant: #cdd3dd;
+  --color-outline-variant: #b7becb;
+  --color-error: #b91c1c;
+  --color-error-container: #fee2e2;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  background: #ffffff;
-  color: #0f172a;
+  background: #f2f4f7;
+  color: #111827;
+}
+
+@layer base {
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
 }

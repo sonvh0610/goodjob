@@ -37,7 +37,7 @@ export function GlobalShell() {
   const desktopMainPadding = collapsed ? 'lg:pl-20' : 'lg:pl-64';
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface-container-low">
       <AppSidebar
         activeKey={activeKey}
         collapsed={collapsed}
@@ -47,7 +47,7 @@ export function GlobalShell() {
       />
       <button
         aria-label="Open menu"
-        className="lg:hidden fixed top-4 left-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm"
+        className="lg:hidden fixed top-4 left-4 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full border border-secondary-fixed/40 bg-secondary-container text-on-secondary-container shadow-sm hover:bg-secondary-fixed transition-colors"
         onClick={() => setMobileOpen(true)}
         type="button"
       >

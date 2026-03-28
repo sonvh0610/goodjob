@@ -31,13 +31,20 @@ export function SidebarNavLink({
   labelClassName = 'font-semibold text-sm',
   to,
 }: SidebarNavLinkProps) {
-  const mergedClassName = `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
-    active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
-  } ${collapsed ? 'justify-center' : ''} ${className}`.trim();
+  const mergedClassName =
+    `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+      active
+        ? 'bg-primary text-on-primary'
+        : 'text-on-surface hover:bg-primary hover:text-on-primary'
+    } ${collapsed ? 'justify-center' : ''} ${className}`.trim();
 
   const content = (
     <>
-      <AppIcon className={iconClassName} data-icon={iconDataIcon} style={iconStyle}>
+      <AppIcon
+        className={iconClassName}
+        data-icon={iconDataIcon}
+        style={iconStyle}
+      >
         {iconName}
       </AppIcon>
       {collapsed ? null : <span className={labelClassName}>{label}</span>}

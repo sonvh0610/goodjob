@@ -5,6 +5,80 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
 };
 
+function toReadableError(
+  value: unknown,
+  fallback: string,
+  path?: string
+): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : fallback;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (!value || typeof value !== 'object') {
+    return fallback;
+  }
+
+  if (Array.isArray(value)) {
+    const messages = value
+      .map((item) => toReadableError(item, '', path))
+      .filter((message) => message.length > 0);
+    return messages.length > 0 ? messages.join(', ') : fallback;
+  }
+
+  const record = value as Record<string, unknown>;
+  if (typeof record.message === 'string' && record.message.trim().length > 0) {
+    return record.message.trim();
+  }
+
+  if (path === undefined) {
+    const nestedError = record.error;
+    if (nestedError !== undefined) {
+      const nestedMessage = toReadableError(nestedError, '', 'error');
+      if (nestedMessage.length > 0) {
+        return nestedMessage;
+      }
+    }
+  }
+
+  const formErrors = Array.isArray(record.formErrors)
+    ? record.formErrors
+        .map((item) => toReadableError(item, '', path))
+        .filter((message) => message.length > 0)
+    : [];
+
+  const fieldErrors = record.fieldErrors;
+  if (fieldErrors && typeof fieldErrors === 'object' && !Array.isArray(fieldErrors)) {
+    const perFieldMessages = Object.entries(fieldErrors as Record<string, unknown>)
+      .flatMap(([fieldName, fieldValue]) => {
+        if (!Array.isArray(fieldValue)) {
+          return [];
+        }
+        return fieldValue
+          .map((item) => toReadableError(item, '', path))
+          .filter((message) => message.length > 0)
+          .map((message) => `${fieldName}: ${message}`);
+      });
+    if (formErrors.length > 0 || perFieldMessages.length > 0) {
+      return [...formErrors, ...perFieldMessages].join('; ');
+    }
+  }
+
+  const values = Object.values(record);
+  const nestedValues = values
+    .map((item) => toReadableError(item, '', path))
+    .filter((message) => message.length > 0);
+  if (nestedValues.length > 0) {
+    return nestedValues.join('; ');
+  }
+
+  return fallback;
+}
+
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {}
@@ -23,10 +97,8 @@ export async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const errBody = (await response.json().catch(() => null)) as
-      | { error?: string }
-      | null;
-    throw new Error(errBody?.error ?? `Request failed (${response.status})`);
+    const errBody = await response.json().catch(() => null);
+    throw new Error(toReadableError(errBody, `Request failed (${response.status})`));
   }
 
   if (response.status === 204) {

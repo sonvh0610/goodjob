@@ -8,10 +8,13 @@ import {
 import { db } from '../../db/client.js';
 import {
   budgetLedger,
+  commentMediaAssets,
   comments,
   feedEvents,
-  kudoTaggedUsers,
+  kudoMediaAssets,
   kudos,
+  mediaAssets,
+  monthlyGivingWallets,
   notifications,
   pointLedger,
   reactions,
@@ -34,6 +37,7 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
 
       const actor = request.user!;
       const data = parsed.data;
+
       if (actor.id === data.receiverId) {
         return reply.status(400).send({ error: 'Cannot send kudo to self' });
       }
@@ -45,12 +49,39 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: 'Receiver not found' });
       }
 
-      const tagged = data.taggedUserIds.length
-        ? await db
-            .select({ id: users.id })
-            .from(users)
-            .where(inArray(users.id, data.taggedUserIds))
-        : [];
+      const requestedMediaIds = data.mediaAssetIds?.length
+        ? Array.from(new Set(data.mediaAssetIds))
+        : data.mediaAssetId
+          ? [data.mediaAssetId]
+          : [];
+
+      if (requestedMediaIds.length > 5) {
+        return reply.status(400).send({ error: 'Maximum 5 media files per kudo' });
+      }
+
+      let validMediaIds: string[] = [];
+      if (requestedMediaIds.length > 0) {
+        const rows = await db
+          .select({
+            id: mediaAssets.id,
+            status: mediaAssets.status,
+          })
+          .from(mediaAssets)
+          .where(
+            and(
+              eq(mediaAssets.ownerId, actor.id),
+              inArray(mediaAssets.id, requestedMediaIds)
+            )
+          );
+
+        if (rows.length !== requestedMediaIds.length) {
+          return reply.status(400).send({ error: 'Invalid media asset selection' });
+        }
+        if (rows.some((item) => item.status === 'rejected')) {
+          return reply.status(400).send({ error: 'Invalid media asset selection' });
+        }
+        validMediaIds = requestedMediaIds;
+      }
 
       const monthKey = monthKeyFromDate();
 
@@ -61,18 +92,49 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
             sql`select user_id from wallets where user_id = ${actor.id} for update`
           );
 
-          const spentRows = await tx
-            .select({
-              total: sql<number>`coalesce(sum(${budgetLedger.deltaPoints}), 0)`,
-            })
-            .from(budgetLedger)
-            .where(
-              and(
-                eq(budgetLedger.userId, actor.id),
-                eq(budgetLedger.monthKey, monthKey)
-              )
-            );
-          const alreadySpent = Math.abs(Math.min(spentRows[0]?.total ?? 0, 0));
+          await tx.execute(
+            sql`select user_id from monthly_giving_wallets where user_id = ${actor.id} and month_key = ${monthKey} for update`
+          );
+
+          let monthlySummary = await tx.query.monthlyGivingWallets.findFirst({
+            where: and(
+              eq(monthlyGivingWallets.userId, actor.id),
+              eq(monthlyGivingWallets.monthKey, monthKey)
+            ),
+          });
+
+          if (!monthlySummary) {
+            const spentRows = await tx
+              .select({
+                total: sql<number>`coalesce(sum(${budgetLedger.deltaPoints}), 0)`,
+              })
+              .from(budgetLedger)
+              .where(
+                and(
+                  eq(budgetLedger.userId, actor.id),
+                  eq(budgetLedger.monthKey, monthKey)
+                )
+              );
+            const spentPoints = Math.abs(Math.min(spentRows[0]?.total ?? 0, 0));
+
+            const insertedSummary = await tx
+              .insert(monthlyGivingWallets)
+              .values({
+                userId: actor.id,
+                monthKey,
+                spentPoints,
+                limitPoints: MONTHLY_BUDGET,
+              })
+              .onConflictDoUpdate({
+                target: [monthlyGivingWallets.userId, monthlyGivingWallets.monthKey],
+                set: { spentPoints, updatedAt: new Date() },
+              })
+              .returning();
+
+            monthlySummary = insertedSummary[0] ?? null;
+          }
+
+          const alreadySpent = monthlySummary?.spentPoints ?? 0;
           if (alreadySpent + data.points > MONTHLY_BUDGET) {
             throw new Error('MONTHLY_BUDGET_EXCEEDED');
           }
@@ -84,14 +146,24 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
               receiverId: data.receiverId,
               points: data.points,
               description: data.description,
-              coreValue: data.coreValue,
-              mediaAssetId: data.mediaAssetId,
+              coreValue: 'Kudos',
+              mediaAssetId: validMediaIds[0] ?? null,
             })
             .returning();
 
           const kudo = insertedKudo[0];
           if (!kudo) {
             throw new Error('KUDO_NOT_CREATED');
+          }
+
+          if (validMediaIds.length > 0) {
+            await tx.insert(kudoMediaAssets).values(
+              validMediaIds.map((mediaAssetId, index) => ({
+                kudoId: kudo.id,
+                mediaAssetId,
+                position: index,
+              }))
+            );
           }
 
           await tx.insert(pointLedger).values([
@@ -122,6 +194,22 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
             refId: kudo.id,
           });
 
+          await tx
+            .insert(monthlyGivingWallets)
+            .values({
+              userId: actor.id,
+              monthKey,
+              spentPoints: alreadySpent + data.points,
+              limitPoints: MONTHLY_BUDGET,
+            })
+            .onConflictDoUpdate({
+              target: [monthlyGivingWallets.userId, monthlyGivingWallets.monthKey],
+              set: {
+                spentPoints: alreadySpent + data.points,
+                updatedAt: new Date(),
+              },
+            });
+
           await tx.insert(feedEvents).values({
             kudoId: kudo.id,
             actorId: actor.id,
@@ -129,7 +217,6 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
             payloadJson: {
               points: data.points,
               description: data.description,
-              coreValue: data.coreValue,
             },
           });
 
@@ -141,25 +228,13 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
             })
             .where(eq(wallets.userId, data.receiverId));
 
-          if (tagged.length > 0) {
-            await tx.insert(kudoTaggedUsers).values(
-              tagged.map((item) => ({
-                kudoId: kudo.id,
-                userId: item.id,
-              }))
-            );
-          }
-
-          const recipientIds = Array.from(
-            new Set([data.receiverId, ...tagged.map((item) => item.id)])
-          );
+          const recipientIds = [data.receiverId];
           await tx.insert(notifications).values(
             recipientIds
               .filter((id) => id !== actor.id)
               .map((userId) => ({
                 userId,
-                type:
-                  userId === data.receiverId ? 'kudo_received' : 'kudo_tagged',
+                type: 'kudo_received',
                 payloadJson: {
                   kudoId: kudo.id,
                   senderId: actor.id,
@@ -232,16 +307,38 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
         .onConflictDoNothing()
         .returning();
 
-      if (inserted.length === 0) {
-        return reply.send({ ok: true, deduplicated: true });
+      if (inserted.length > 0) {
+        await db.insert(feedEvents).values({
+          kudoId: params.id,
+          actorId: request.user!.id,
+          type: 'reaction_added',
+          payloadJson: { emoji: parsed.data.emoji },
+        });
+
+        await fastify.publishEvent({
+          event: 'feed.reaction',
+          payload: {
+            kudoId: params.id,
+            emoji: parsed.data.emoji,
+            actorId: request.user!.id,
+            action: 'added',
+          },
+          createdAt: new Date().toISOString(),
+        });
+
+        return reply.status(201).send({ reaction: inserted[0], toggled: 'added' });
       }
 
-      await db.insert(feedEvents).values({
-        kudoId: params.id,
-        actorId: request.user!.id,
-        type: 'reaction_added',
-        payloadJson: { emoji: parsed.data.emoji },
-      });
+      const deleted = await db
+        .delete(reactions)
+        .where(
+          and(
+            eq(reactions.kudoId, params.id),
+            eq(reactions.userId, request.user!.id),
+            eq(reactions.emoji, parsed.data.emoji)
+          )
+        )
+        .returning();
 
       await fastify.publishEvent({
         event: 'feed.reaction',
@@ -249,11 +346,12 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
           kudoId: params.id,
           emoji: parsed.data.emoji,
           actorId: request.user!.id,
+          action: 'removed',
         },
         createdAt: new Date().toISOString(),
       });
 
-      return reply.status(201).send({ reaction: inserted[0] });
+      return reply.send({ ok: true, toggled: 'removed', reaction: deleted[0] });
     }
   );
 
@@ -267,19 +365,63 @@ export default async function kudosRoutes(fastify: FastifyInstance) {
       }
       const params = request.params as { id: string };
 
+      const requestedMediaIds = parsed.data.mediaAssetIds?.length
+        ? Array.from(new Set(parsed.data.mediaAssetIds))
+        : parsed.data.mediaAssetId
+          ? [parsed.data.mediaAssetId]
+          : [];
+
+      if (requestedMediaIds.length > 5) {
+        return reply.status(400).send({ error: 'Maximum 5 media files per comment' });
+      }
+
+      let validMediaIds: string[] = [];
+      if (requestedMediaIds.length > 0) {
+        const rows = await db
+          .select({
+            id: mediaAssets.id,
+            status: mediaAssets.status,
+          })
+          .from(mediaAssets)
+          .where(
+            and(
+              eq(mediaAssets.ownerId, request.user!.id),
+              inArray(mediaAssets.id, requestedMediaIds)
+            )
+          );
+
+        if (rows.length !== requestedMediaIds.length) {
+          return reply.status(400).send({ error: 'Invalid media asset' });
+        }
+        if (rows.some((item) => item.status === 'rejected')) {
+          return reply.status(400).send({ error: 'Invalid media asset' });
+        }
+        validMediaIds = requestedMediaIds;
+      }
+
       const inserted = await db
         .insert(comments)
         .values({
           kudoId: params.id,
           userId: request.user!.id,
-          text: parsed.data.text,
-          mediaAssetId: parsed.data.mediaAssetId,
+          text: parsed.data.text ?? '',
+          mediaAssetId: validMediaIds[0] ?? null,
         })
         .returning();
 
       const comment = inserted[0];
       if (!comment) {
         return reply.status(500).send({ error: 'Cannot create comment' });
+      }
+
+      if (validMediaIds.length > 0) {
+        await db.insert(commentMediaAssets).values(
+          validMediaIds.map((mediaAssetId, index) => ({
+            commentId: comment.id,
+            mediaAssetId,
+            position: index,
+          }))
+        );
       }
 
       await db.insert(feedEvents).values({
